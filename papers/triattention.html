@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TriAttention | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main>
+<div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+
+  <div class="tag-list" style="margin-bottom:12px">
+    <span class="tag">LLM</span><span class="tag">KV Cache</span><span class="tag">长上下文推理</span><span class="tag">2026-04-06</span>
+  </div>
+  <h1 class="paper-title">TriAttention: Efficient Long Reasoning with Trigonometric KV Compression</h1>
+  <div class="paper-title-zh">TriAttention：基于三角函数 KV 压缩的高效长推理</div>
+
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Weian Mao, Xi Lin, Wei Huang, Yuxin Xie, Tianfu Fu, Bohan Zhuang, Song Han, Yukang Chen</span></div>
+    <div class="meta-item"><label>机构</label><span>MIT / NVIDIA / 多高校联合（Song Han 为 MIT 教授）</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-06</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.04921" target="_blank">arxiv 2604.04921 ↗</a></span></div>
+    <div class="meta-item"><label>代码</label><span><a href="https://github.com/WeianMao/triattention" target="_blank">GitHub ↗</a></span></div>
+  </div>
+
+  <div class="tldr-box"><strong>TL;DR</strong>在 pre-RoPE 空间发现 Q/K 向量集中特性，用三角级数对 Key 位置重要性建模，在 AIME25 长推理任务中实现 10.7x KV 内存压缩同时完全匹配 Full Attention 精度。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <h3>研究方向</h3>
+    <div class="tag-list"><span class="tag">LLM</span><span class="tag">KV Cache 压缩</span><span class="tag">长上下文推理</span></div>
+    <h3>已有方法的局限性</h3>
+    <ul class="detail-list">
+      <li><strong>精度损失严重：</strong>H2O、SnapKV 等方法在长推理链场景（CoT 32K+ tokens）下精度急剧下降，因推理中间步骤 token 均关键，不可随意丢弃。</li>
+      <li><strong>先算后压：</strong>现有基于注意力分数的 KV 重要性估计，需要先完成完整注意力计算才能决策哪些 KV 可压缩，无法真正减少计算量。</li>
+      <li><strong>位置感知建模缺失：</strong>已有方法对 Key 的位置依赖性建模不足，缺乏理论支撑的重要性度量，本质上是启发式规则。</li>
+    </ul>
+    <h3>本文核心问题</h3>
+    <p style="font-size:0.9rem;line-height:1.7">在 32K+ token 长推理场景中，KV Cache 随上下文线性增长，成为吞吐瓶颈。如何在不显著降低精度的前提下，用理论有保证的方式大幅压缩 KV Cache？</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <h3>整体框架</h3>
+    <p style="font-size:0.9rem;line-height:1.7;margin-bottom:12px">TriAttention 的核心是一个在 <strong>pre-RoPE 空间</strong>建立的轻量级重要性预测器。关键洞察：Q/K 向量在应用旋转位置编码之前，分布集中在固定非零中心附近（Q/K concentration），且这种集中性跨位置稳定。利用此特性，可以用三角级数拟合 Q/K 中心内积随相对位置距离的变化，从而在不计算完整注意力矩阵的情况下预测任意 Key 的重要性。</p>
+
+    <h3>关键模块</h3>
+    <div class="module-block"><strong>① Q/K Concentration 分析：</strong>在 pre-RoPE 空间统计 Q/K 向量的分布中心 $\bar{q}, \bar{k}$，证明向量集中在非零均值附近，且跨序列位置稳定——这是后续三角建模的几何基础。</div>
+    <div class="module-block"><strong>② 三角级数位置重要性估计：</strong>Q/K 中心向量的内积随相对位置距离 $\Delta p$ 呈周期性变化，可用三角函数级数展开拟合：通过中心向量预测当前 Query 对各位置 Key 的偏好，无需显式注意力计算。</div>
+    <div class="module-block"><strong>③ Norm 加权 KV 压缩：</strong>将三角估计的位置重要性与 Q/K 向量范数相结合，得到综合重要性排名，动态保留 top-K 重要 KV 对，丢弃低重要性历史 KV。</div>
+
+    <h3>关键公式</h3>
+    <div class="formula-box">Key 重要性估计：<br/>
+s(p) ≈ ‖q‖ · ‖k‖ · Σₙ aₙ cos(n·Δp + φₙ)<br/>
+其中 aₙ, φₙ 为三角级数系数，由 Q/K 中心向量的内积分解得到；Δp 为相对位置距离</div>
+
+    <h3>与已有方法的本质区别</h3>
+    <p style="font-size:0.9rem;line-height:1.7">H2O/SnapKV 依赖<em>已计算的</em>注意力分数进行事后 KV 淘汰；TriAttention 在<em>注意力计算之前</em>就可以预测 Key 重要性，利用的是 Q/K 的全局几何结构（中心集中性 + 范数），而非局部注意力分布。这是本质上的范式转变，而非工程优化。</p>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验与结果</h2>
+    <h3>数据集</h3>
+    <p style="font-size:0.9rem">AIME 2025（长推理链数学竞赛，32K token 生成）+ 标准 LLM 推理基准</p>
+    <h3>Baseline 对比</h3>
+    <p style="font-size:0.9rem">Full Attention（上界）· H2O · SnapKV · StreamingLLM</p>
+    <h3>关键结果</h3>
+    <ul class="detail-list">
+      <li>AIME25 32K 生成：<span class="result-highlight">匹配 Full Attention 精度</span></li>
+      <li>推理吞吐提升：<span class="result-highlight">2.5x</span>，或 KV 内存减少：<span class="result-highlight">10.7x</span></li>
+      <li>相同效率预算下，准确率是对比基线的 <span class="result-highlight">2x</span></li>
+    </ul>
+    <h3>消融实验</h3>
+    <p style="font-size:0.9rem;line-height:1.7">有消融实验分别验证三角位置估计、norm 加权两个组件的独立贡献；同时提供不同压缩比下精度-效率权衡曲线。</p>
+  </div>
+
+  <div class="section">
+    <h2>✨ 贡献点</h2>
+    <div class="contrib-item"><div class="contrib-num">1</div><div>首次在 pre-RoPE 空间系统发现并利用 Q/K 向量集中（concentration）现象，为 KV 重要性度量提供了具有几何直觉和理论保证的基础。</div></div>
+    <div class="contrib-item"><div class="contrib-num">2</div><div>提出基于三角级数的轻量级 Key 重要性预测器——无需额外注意力计算，可在生成 token 之前完成重要性排序。</div></div>
+    <div class="contrib-item"><div class="contrib-num">3</div><div>在 AIME25 长推理链（32K tokens）场景实现 10.7x KV 内存压缩同时精度无损，显著优于现有所有基线，使单 GPU 部署长上下文 LLM 成为可能。</div></div>
+  </div>
+
+  <div class="section">
+    <h2>⚠️ 局限性</h2>
+    <div class="limit-box"><div class="limit-label">作者提及</div>摘要未明确提及局限性。</div>
+    <div class="limit-box warning"><div class="limit-label">潜在问题</div>
+      <ul class="detail-list" style="margin-top:4px">
+        <li>三角级数系数的估计可能对模型架构和预训练数据分布敏感，迁移到新架构模型时需重新校准。</li>
+        <li>Q/K concentration 假设在所有层和任务类型上是否普遍成立尚待验证，对非数学推理任务（如开放生成）泛化性存疑。</li>
+        <li>压缩策略基于位置重要性，未充分考虑内容语义重要性（某些 norm 较小的 token 可能携带关键语义信息）。</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv</p></div></footer>
+</body>
+</html>
