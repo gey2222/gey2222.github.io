@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>MSAO | 每日论文精读</title>
+<link rel="stylesheet" href="../assets/style.css"/></head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main><div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px"><span class="tag">LLM</span><span class="tag">多模态</span><span class="tag">边缘计算</span><span class="tag">边云协作</span></div>
+  <h1 class="paper-title">MSAO: Adaptive Modality Sparsity-Aware Offloading with Edge-Cloud Collaboration for Efficient Multimodal LLM Inference</h1>
+  <div class="paper-title-zh">MSAO：面向高效多模态 LLM 推理的自适应模态稀疏感知边云协作卸载</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Zheming Yang, Qi Guo, Jun Wan, Jiarui Ruan, Yunqing Hu, Chang Zhao, Xiangyang Li</span></div>
+    <div class="meta-item"><label>机构</label><span>未明确公开</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-03</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.02945" target="_blank">arxiv 2604.02945 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong>提出 MAS（模态激活稀疏性）指标量化各模态的必要性，结合自适应投机性边云协作卸载，将多模态 LLM 边缘推理延迟降低 30%，吞吐提升 1.5-2.3x。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <h3>研究方向</h3>
+    <div class="tag-list"><span class="tag">多模态 LLM</span><span class="tag">边缘计算</span><span class="tag">系统</span></div>
+    <h3>已有方法的局限性</h3>
+    <ul class="detail-list">
+      <li><strong>边缘资源严重受限：</strong>多模态 LLM 的视觉/音频编码器与语言解码器联合推理对内存和算力要求极高，单一边缘设备无法承载。</li>
+      <li><strong>固定卸载策略不适应：</strong>现有边云卸载方案采用静态规则，无法根据输入内容的模态重要性动态调整，造成不必要的通信开销。</li>
+      <li><strong>通信延迟隐藏不足：</strong>传统方案中，数据传输与模型推理是串行的，通信延迟直接暴露在端到端延迟中。</li>
+    </ul>
+    <h3>本文核心问题</h3>
+    <p style="font-size:0.9rem;line-height:1.7">不同输入（如纯文本 vs 图文混合）对各模态的依赖程度差异极大，如何动态感知这种差异并据此自适应地分配边缘-云端计算资源？</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <h3>整体框架</h3>
+    <p style="font-size:0.9rem;line-height:1.7;margin-bottom:12px">MSAO 分为两个协同模块：（1）轻量级 MAS 指标计算模块，在边缘端低成本地估计各模态对当前输入的必要性；（2）自适应投机性边云协作卸载模块，基于 MAS 分数动态决策哪些计算在边缘执行，哪些卸载到云端，并通过置信度引导的投机执行隐藏通信延迟。</p>
+    <h3>关键模块</h3>
+    <div class="module-block"><strong>① MAS 指标（Modality Activation Sparsity）：</strong>联合时空-模态三维分析，计算每个模态在当前输入中的激活稀疏度，量化其「必要性」——稀疏度高意味着该模态信息对此次推理贡献有限，可降低优先级或卸载到云端处理。</div>
+    <div class="module-block"><strong>② 自适应投机性边云卸载：</strong>基于 MAS 分数和实时系统状态（带宽、云端负载、边缘资源），动态调度计算工作负载。高重要性模态在边缘就地处理，低重要性模态异步卸载云端；置信度引导的投机执行机制在等待云端结果的同时继续边缘推理，实现通信延迟的有效隐藏。</div>
+    <h3>与已有方法的本质区别</h3>
+    <p style="font-size:0.9rem;line-height:1.7">现有边云协作方案基于固定规则（如「图像编码器卸云端」），不感知输入内容。MSAO 的本质差异是引入了「内容感知」的动态决策：MAS 指标让系统知道「对于这个具体输入，哪个模态其实不重要」，从而避免无效的高成本计算和传输。</p>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验与结果</h2>
+    <h3>数据集</h3><p style="font-size:0.9rem">VQAv2 · MMBench</p>
+    <h3>Baseline</h3><p style="font-size:0.9rem">传统固定卸载策略 · 全边缘推理 · 全云端推理</p>
+    <h3>关键结果</h3>
+    <ul class="detail-list">
+      <li>端到端延迟降低 <span class="result-highlight">30%</span></li>
+      <li>资源开销降低 <span class="result-highlight">30%-65%</span></li>
+      <li>吞吐量提升 <span class="result-highlight">1.5x-2.3x</span></li>
+      <li>精度无明显损失（与固定卸载策略相当）</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>✨ 贡献点</h2>
+    <div class="contrib-item"><div class="contrib-num">1</div><div>提出 MAS 指标——首个针对多模态 LLM 的内容感知模态必要性度量，轻量级且可在边缘端实时计算。</div></div>
+    <div class="contrib-item"><div class="contrib-num">2</div><div>设计投机性边云协作执行机制，实现通信延迟的有效隐藏，而非传统的串行等待。</div></div>
+    <div class="contrib-item"><div class="contrib-num">3</div><div>将动态卸载决策问题形式化为多约束优化，并提供了实用的自适应调度算法。</div></div>
+  </div>
+
+  <div class="section">
+    <h2>⚠️ 局限性</h2>
+    <div class="limit-box"><div class="limit-label">作者提及</div>摘要未明确提及局限性。</div>
+    <div class="limit-box warning"><div class="limit-label">潜在问题</div>
+      <ul class="detail-list" style="margin-top:4px">
+        <li>MAS 指标的计算本身有一定开销，在超低功耗边缘设备上可能成为负担。</li>
+        <li>投机性执行在云端延迟极高或网络不稳定时效果可能退化。</li>
+        <li>仅在 VQAv2 和 MMBench 上验证，对视频理解等更复杂多模态任务的泛化性未知。</li>
+      </ul>
+    </div>
+  </div>
+</div></main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv</p></div></footer>
+</body></html>
