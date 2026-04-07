@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Swift-SVD | 每日论文精读</title>
+<link rel="stylesheet" href="../assets/style.css"/></head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main><div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px"><span class="tag">LLM</span><span class="tag">模型压缩</span><span class="tag">低秩近似</span></div>
+  <h1 class="paper-title">Swift-SVD: Theoretical Optimality Meets Practical Efficiency in Low-Rank LLM Compression</h1>
+  <div class="paper-title-zh">Swift-SVD：理论最优性与实践效率在低秩 LLM 压缩中的统一</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Ruoling Qi et al.</span></div>
+    <div class="meta-item"><label>机构</label><span>未明确公开</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-02</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.01609" target="_blank">arxiv 2604.01609 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong>通过增量聚合激活协方差矩阵后单次特征值分解，得到激活感知的闭合形式最优 SVD 压缩解，速度比迭代方法快 3-70x，在 6 个 LLM 和 8 个数据集上全面超越 SOTA。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <h3>研究方向</h3>
+    <div class="tag-list"><span class="tag">LLM</span><span class="tag">模型压缩</span><span class="tag">低秩近似</span></div>
+    <h3>已有方法的局限性</h3>
+    <ul class="detail-list">
+      <li><strong>迭代方法慢：</strong>ASVD、SVD-LLM 等激活感知 SVD 方法需对每个权重矩阵迭代优化，压缩速度极慢（数小时至数天）。</li>
+      <li><strong>快速方法次优：</strong>随机化 SVD 等快速方法牺牲了理论最优性，在激活感知场景下精度损失较大，且缺乏理论保证。</li>
+      <li><strong>缺乏自适应 rank 分配：</strong>现有方法缺乏对各层「有效秩」的系统分析，往往采用统一的 rank 分配策略，无法针对不同层的可压缩性进行自适应优化。</li>
+    </ul>
+    <h3>本文核心问题</h3>
+    <p style="font-size:0.9rem;line-height:1.7">能否在激活感知的低秩 LLM 压缩中同时实现理论最优解（精度损失最小）和高速压缩，而非在两者之间取舍？</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <h3>整体框架</h3>
+    <p style="font-size:0.9rem;line-height:1.7;margin-bottom:12px">核心洞察：激活感知 SVD 的最优解可以用闭合形式表达——只需对输入激活的协方差矩阵做一次特征值分解即可得到理论最优低秩投影方向，无需任何迭代优化。将这个「一次性」操作与增量协方差聚合结合，就得到了既快又优的 Swift-SVD。</p>
+    <h3>关键模块</h3>
+    <div class="module-block"><strong>① 增量激活协方差聚合：</strong>在校准数据集上逐批次更新各层输入激活的协方差矩阵 Σ_l = Σᵢ xᵢxᵢᵀ，无需存储所有激活，内存友好；聚合完成后矩阵不再变化。</div>
+    <div class="module-block"><strong>② 闭合形式激活感知 SVD：</strong>对聚合的协方差矩阵进行单次特征值分解，得到激活感知的最优低秩基底。在信息论意义上等价于最小化激活加权重构误差，且只需执行一次 EVD 而非迭代优化。</div>
+    <div class="module-block"><strong>③ Effective Rank 动态 Rank 分配：</strong>利用各层协方差矩阵的奇异值分布（熵归一化指标）量化该层的「有效秩」——即真正包含信息的维度数。可压缩性高的层分配低 rank，信息密集层保留高 rank，实现全局压缩比的最优分配。</div>
+    <h3>关键公式</h3>
+    <div class="formula-box">激活感知低秩压缩的最优解：<br/>
+min_{Ŵ: rank(Ŵ)≤r} ‖W - Ŵ‖²_Σ，其中 ‖A‖²_Σ = tr(A Σ Aᵀ)<br/><br/>
+Swift-SVD 闭合形式解：对 Σ = VΛVᵀ，最优压缩为 Ŵ = W·V_r·V_rᵀ<br/>
+其中 V_r 为协方差矩阵前 r 个特征向量（单次 EVD 得到）</div>
+    <h3>与已有方法的本质区别</h3>
+    <p style="font-size:0.9rem;line-height:1.7">ASVD 等迭代方法通过反复优化逼近最优解；Swift-SVD 认识到「协方差矩阵可以预先聚合，EVD 只需执行一次」，将迭代问题转化为解析问题。速度提升 3-70x 的本质是：用一次矩阵分解替代了数十次迭代优化。</p>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验与结果</h2>
+    <h3>数据集</h3><p style="font-size:0.9rem">WikiText-2 · PTB · MMLU · ARC · HellaSwag 等共 8 个数据集</p>
+    <h3>Baseline</h3><p style="font-size:0.9rem">ASVD · SVD-LLM · TruncatedSVD（随机化 SVD）</p>
+    <h3>关键结果</h3>
+    <ul class="detail-list">
+      <li>6 个不同规模 LLM 上，压缩速度比迭代方法快 <span class="result-highlight">3-70x</span></li>
+      <li>8 个数据集上平均性能 <span class="result-highlight">超越所有 SOTA 基线</span></li>
+      <li>高压缩比（50%+ 参数减少）下优势更明显</li>
+    </ul>
+    <h3>消融实验</h3>
+    <p style="font-size:0.9rem">验证 effective rank 动态 rank 分配 vs 均匀分配的效果差异；分析校准数据集大小对压缩质量的影响。</p>
+  </div>
+
+  <div class="section">
+    <h2>✨ 贡献点</h2>
+    <div class="contrib-item"><div class="contrib-num">1</div><div>证明激活感知 SVD 压缩存在闭合形式最优解，打破了「理论最优 vs 速度快」的二元对立，这是真正新的理论洞察。</div></div>
+    <div class="contrib-item"><div class="contrib-num">2</div><div>增量协方差聚合 + 单次 EVD 的实现方案，在数值稳定性和内存效率上做了工程创新。</div></div>
+    <div class="contrib-item"><div class="contrib-num">3</div><div>提出 effective rank 作为层可压缩性度量，并设计联合局部损失和全层重要性的动态 rank 分配策略，系统解决了「该压哪些层、压多少」的问题。</div></div>
+  </div>
+
+  <div class="section">
+    <h2>⚠️ 局限性</h2>
+    <div class="limit-box"><div class="limit-label">作者提及</div>论文处于 Under Review 状态，代码尚未发布。</div>
+    <div class="limit-box warning"><div class="limit-label">潜在问题</div>
+      <ul class="detail-list" style="margin-top:4px">
+        <li>协方差矩阵估计的质量依赖校准数据集的代表性，分布偏移可能导致压缩质量下降。</li>
+        <li>对于本身即低秩的权重矩阵（如某些 Attention 投影），SVD 压缩的收益可能有限。</li>
+        <li>large batch 下协方差矩阵计算的 GPU 内存需求可能成为瓶颈。</li>
+      </ul>
+    </div>
+  </div>
+</div></main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv</p></div></footer>
+</body></html>
