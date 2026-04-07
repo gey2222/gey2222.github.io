@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FrameDiT | 每日论文精读</title>
+<link rel="stylesheet" href="../assets/style.css"/></head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main><div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px"><span class="tag">视频生成</span><span class="tag">Diffusion Transformer</span><span class="tag">Attention</span></div>
+  <h1 class="paper-title">FrameDiT: Diffusion Transformer with Frame-Level Matrix Attention for Efficient Video Generation</h1>
+  <div class="paper-title-zh">FrameDiT：基于帧级矩阵注意力的高效视频生成扩散 Transformer</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Minh Khoa Le, Kien Do, Duc Thanh Nguyen, Truyen Tran</span></div>
+    <div class="meta-item"><label>机构</label><span>Deakin University（澳大利亚）</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-03-10</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2603.09721" target="_blank">arxiv 2603.09721 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong>提出将整帧作为矩阵进行帧间注意力计算的 Matrix Attention 机制，在帧间而非 token 间建模时序依赖，打破 Full 3D Attention（强但贵）与 Local Factorized Attention（快但弱）的效率-质量 trade-off，在多 benchmark 上达到 SOTA。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <h3>研究方向</h3>
+    <div class="tag-list"><span class="tag">视频生成</span><span class="tag">Diffusion Transformer</span><span class="tag">时序建模</span></div>
+    <h3>已有方法的局限性</h3>
+    <ul class="detail-list">
+      <li><strong>Full 3D Attention：</strong>在所有时空 token 之间计算注意力，能力最强（捕获全局时序依赖），但复杂度为 O((T·H·W)²)，对长视频计算代价极高。</li>
+      <li><strong>Local Factorized Attention：</strong>将时序和空间 Attention 分解，或限制 Attention 在局部窗口内，大幅降低复杂度，但对大运动幅度和长时依赖的建模能力受限，视频时序一致性差。</li>
+      <li><strong>缺乏帧级抽象：</strong>现有方法都在 token 级别进行时序建模，没有利用「帧」作为语义单元的自然结构。</li>
+    </ul>
+    <h3>本文核心问题</h3>
+    <p style="font-size:0.9rem;line-height:1.7">能否设计一种时序注意力机制，在计算效率接近 Local Factorized Attention 的同时，保留 Full 3D Attention 的全局时序建模能力？</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <h3>整体框架</h3>
+    <p style="font-size:0.9rem;line-height:1.7;margin-bottom:12px">Matrix Attention 的核心思想：将视频中的每一帧视为一个矩阵（H×W 的特征矩阵），在「帧间」而非「token 间」计算注意力。通过矩阵原生操作（矩阵乘法）生成帧级 Q/K/V，并在帧维度上进行 Attention，实现全局时序建模同时大幅降低复杂度。</p>
+    <h3>关键模块</h3>
+    <div class="module-block"><strong>① Matrix Attention 核心机制：</strong>对于视频序列，将每帧特征图（H×W×C）视为矩阵。通过左右矩阵乘法（而非 token 拼接）生成帧级的 Query、Key、Value 矩阵，在帧间（T 维度）而非 token 间进行注意力计算。复杂度从 O((T·H·W)²) 降至 O(T² · poly(H,W))，大幅减少计算量，同时保留帧间全局依赖。</div>
+    <div class="module-block"><strong>② FrameDiT-G（纯 Matrix Attention）：</strong>全部时序 Attention 模块替换为 Matrix Attention，适用于大运动幅度视频，牺牲部分局部细节换取全局时序一致性。</div>
+    <div class="module-block"><strong>③ FrameDiT-H（混合架构）：</strong>Matrix Attention（处理帧间全局大运动）与 Local Factorized Attention（处理帧内局部精细纹理）交替堆叠，同时捕获大运动和小运动，兼顾质量与效率。</div>
+    <h3>关键公式</h3>
+    <div class="formula-box">Matrix Attention（简化形式）：<br/>
+对帧序列 F = [F_1, ..., F_T]，F_t ∈ R^{H×W×C}<br/>
+Q_t = F_t · W_Q^L （左矩阵投影，R^{H×d}）<br/>
+K_t = W_K^R · F_t （右矩阵投影，R^{d×W}）<br/>
+Attn(t, s) = softmax(Q_t · K_s^T / √d)  （帧间注意力）</div>
+    <h3>与已有方法的本质区别</h3>
+    <p style="font-size:0.9rem;line-height:1.7">传统方法将帧「展平」为 token 序列再做 Attention；Matrix Attention 保留帧的二维结构，通过矩阵乘法隐式建模空间信息，在帧维度上进行全局 Attention。这种「帧级抽象」使得时序建模的粒度从 token 提升到帧，大幅压缩了序列长度。</p>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验与结果</h2>
+    <h3>数据集</h3><p style="font-size:0.9rem">UCF-101 · MSR-VTT · EvalCrafter 等多个视频生成基准</p>
+    <h3>Baseline</h3><p style="font-size:0.9rem">Full 3D Attention DiT · Local Factorized Attention DiT · CogVideo 等</p>
+    <h3>关键结果</h3>
+    <ul class="detail-list">
+      <li>FrameDiT-H 在多个 benchmark 上达到 <span class="result-highlight">SOTA</span></li>
+      <li>时序一致性（Temporal Consistency）显著优于 Local Factorized Attention 方案</li>
+      <li>计算效率与 Local Factorized Attention <span class="result-highlight">相当</span>（显著低于 Full 3D Attention）</li>
+    </ul>
+    <h3>消融实验</h3>
+    <p style="font-size:0.9rem">分析 Matrix Attention 单独使用 vs 混合架构的效果差异；不同视频运动幅度下各方法的相对性能。</p>
+  </div>
+
+  <div class="section">
+    <h2>✨ 贡献点</h2>
+    <div class="contrib-item"><div class="contrib-num">1</div><div>Matrix Attention 的设计——将帧视为矩阵单元进行帧间注意力，从根本上改变了时序建模的粒度，是新颖的架构思路。</div></div>
+    <div class="contrib-item"><div class="contrib-num">2</div><div>FrameDiT-H 混合架构实现了 Full 3D Attention 的质量与 Local Factorized Attention 的效率的有机结合，而非简单取其一。</div></div>
+    <div class="contrib-item"><div class="contrib-num">3</div><div>在多个 benchmark 上同时实现 SOTA 质量和高效率，验证了帧级 Attention 设计的普适性。</div></div>
+  </div>
+
+  <div class="section">
+    <h2>⚠️ 局限性</h2>
+    <div class="limit-box"><div class="limit-label">作者提及</div>摘要未明确提及局限性。</div>
+    <div class="limit-box warning"><div class="limit-label">潜在问题</div>
+      <ul class="detail-list" style="margin-top:4px">
+        <li>Matrix Attention 的矩阵投影操作对帧内空间结构做了隐式假设，对非规则运动（如快速旋转）的建模能力可能受限。</li>
+        <li>混合架构（FrameDiT-H）的最优 Matrix/Local Attention 比例可能需要针对不同任务调优。</li>
+        <li>超长视频（100+ 帧）场景下 T² 的帧间 Attention 复杂度仍可能成为瓶颈。</li>
+      </ul>
+    </div>
+  </div>
+</div></main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv</p></div></footer>
+</body></html>
