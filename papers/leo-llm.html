@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>LEO Satellite LLM | 每日论文精读</title>
+<link rel="stylesheet" href="../assets/style.css"/></head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main><div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px"><span class="tag">LLM</span><span class="tag">System</span><span class="tag">卫星网络</span><span class="tag">分布式推理</span></div>
+  <h1 class="paper-title">Communication-Efficient Collaborative LLM Inference over LEO Satellite Networks</h1>
+  <div class="paper-title-zh">低轨卫星网络上的通信高效协作式 LLM 推理</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Songge Zhang, Wen Wu, Liang Li, Ye Wang, Xuemin Shen</span></div>
+    <div class="meta-item"><label>机构</label><span>未明确公开（推测涉及加拿大高校，Xuemin Shen 为 UWaterloo 教授）</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-06</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.04654" target="_blank">arxiv 2604.04654 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong>将 LLM 切分部署在多颗低轨卫星上，通过 Pipeline 并行 + 自适应激活压缩 + A* DAG 优化，实现推理延迟降低 42%、通信开销降低 71%，精度损失 &lt;1%。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <h3>研究方向</h3>
+    <div class="tag-list"><span class="tag">LLM</span><span class="tag">分布式系统</span><span class="tag">卫星网络</span></div>
+    <h3>已有方法的局限性</h3>
+    <ul class="detail-list">
+      <li><strong>单星资源严重不足：</strong>低轨卫星内存有限，无法承载完整 LLM 模型的参数量。</li>
+      <li><strong>朴素模型切分通信开销大：</strong>简单的流水线并行（Pipeline Parallelism）中，中间激活的卫星间传输会引入大量通信延迟，且随层数增加累积误差严重。</li>
+      <li><strong>缺乏联合优化：</strong>现有方案独立优化切分策略或压缩策略，无法同时最优化延迟与通信开销。</li>
+    </ul>
+    <h3>本文核心问题</h3>
+    <p style="font-size:0.9rem;line-height:1.7">如何在内存受限的卫星网络中，系统性地联合优化模型切分方案和激活压缩比，使端到端推理延迟最小化？</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <h3>整体框架</h3>
+    <p style="font-size:0.9rem;line-height:1.7;margin-bottom:12px">将完整 LLM 切分为多个连续子模型，分别部署在不同卫星上。卫星间通过中间激活传递完成协同推理（Pipeline Parallelism）。关键问题是：如何决定在哪里切分（切分点）以及传输的激活压缩多少（压缩比）？本文将这个联合优化问题建模为有向无环图（DAG）上的最短路径问题，用改进 A* 算法求解。</p>
+    <h3>关键模块</h3>
+    <div class="module-block"><strong>① Pipeline 并行推理：</strong>子模型推理与激活传输流水线化，计算与通信重叠执行，隐藏大部分传输延迟——这是减少端到端延迟的基础机制。</div>
+    <div class="module-block"><strong>② 自适应激活压缩：</strong>对卫星间传输的中间激活进行有损压缩，降低通信开销。关键创新：针对多级切分场景设计累积误差控制机制，防止多跳传输后精度急剧退化。</div>
+    <div class="module-block"><strong>③ DAG + 改进 A* 优化：</strong>将「在哪里切分」和「压缩比设多少」联合建模为 DAG 的最短路径问题，图的边权显式量化每种切分+压缩策略组合的推理延迟。改进 A* 算法在满足内存约束和精度约束的前提下，高效求解全局最优切分方案。</div>
+    <h3>与已有方法的本质区别</h3>
+    <p style="font-size:0.9rem;line-height:1.7">现有分布式 LLM 推理方案（如 TensorParallel、PipelineParallel）面向数据中心设计，不考虑通信带宽受限场景。本文的新颖性在于：将卫星间带宽约束、激活压缩、精度损失预算和内存约束纳入统一优化框架，并提供了可求解的形式化方案。</p>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验与结果</h2>
+    <h3>数据集</h3><p style="font-size:0.9rem">仿真实验（基于真实 LEO 卫星轨道参数）+ 标准 LLM 推理精度评测</p>
+    <h3>Baseline</h3><p style="font-size:0.9rem">朴素流水线并行 · 无压缩协作推理 · 均匀切分策略</p>
+    <h3>关键结果</h3>
+    <ul class="detail-list">
+      <li>推理延迟降低最多 <span class="result-highlight">42%</span></li>
+      <li>通信开销降低最多 <span class="result-highlight">71%</span></li>
+      <li>推理精度损失 <span class="result-highlight">&lt;1%</span></li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>✨ 贡献点</h2>
+    <div class="contrib-item"><div class="contrib-num">1</div><div>首次将 LLM 分布式推理问题形式化为 LEO 卫星网络场景下的联合优化问题，并提供可解的 DAG 最短路径建模。</div></div>
+    <div class="contrib-item"><div class="contrib-num">2</div><div>设计多级激活压缩的累积误差控制机制，解决了多跳传输下精度退化的关键工程难题。</div></div>
+    <div class="contrib-item"><div class="contrib-num">3</div><div>改进 A* 算法实现约束满足下的高效全局最优求解，兼顾理论保证和实用性。</div></div>
+  </div>
+
+  <div class="section">
+    <h2>⚠️ 局限性</h2>
+    <div class="limit-box"><div class="limit-label">作者提及</div>基于仿真实验，未在真实 LEO 卫星硬件上验证。</div>
+    <div class="limit-box warning"><div class="limit-label">潜在问题</div>
+      <ul class="detail-list" style="margin-top:4px">
+        <li>卫星间链路的动态变化（遮蔽、轨道移动）可能导致最优切分方案需要频繁重新计算，实时性有待验证。</li>
+        <li>激活压缩对不同类型任务（推理 vs 生成）的影响可能不均匀。</li>
+        <li>仅考虑同构卫星场景，异构卫星（不同内存/算力）的优化更复杂。</li>
+      </ul>
+    </div>
+  </div>
+</div></main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv</p></div></footer>
+</body></html>
