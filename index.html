@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>每日论文精读 | Daily Paper Reading</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>📚 每日论文精读</h1>
+      <p class="subtitle">系统性阅读 AI 前沿论文 · 深度理解 + 结构化分析</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="date-section">
+      <div class="date-header">
+        <h2>🗓️ 2026-04-07</h2>
+        <span class="badge badge-theme">Efficient AI Algorithms</span>
+      </div>
+      <p class="date-desc">重点方向：LLM 效率 & 视频生成效率 · 共 11 篇论文</p>
+
+      <h3 class="category-title">🧠 LLM 高效算法</h3>
+      <div class="paper-grid">
+
+        <a class="paper-card" href="papers/triattention.html">
+          <div class="card-tag">LLM · KV Cache</div>
+          <h4>TriAttention</h4>
+          <p class="card-tldr">用三角级数对 KV 重要性建模，实现 10.7x 内存压缩同时匹配 Full Attention 精度</p>
+          <div class="card-meta">Weian Mao et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/joyai-llm-flash.html">
+          <div class="card-tag">LLM · MoE · RL</div>
+          <h4>JoyAI-LLM Flash</h4>
+          <p class="card-tldr">48B 总参/2.7B 激活 MoE + FiberPO 强化学习，sub-50B 规模 SOTA</p>
+          <div class="card-meta">Aichen Cai et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/multi-agent-inference.html">
+          <div class="card-tag">LLM · System · 推理效率</div>
+          <h4>Multi-Agent Inference</h4>
+          <p class="card-tldr">Output token 数才是延迟瓶颈：大模型借用小模型推理链，自身只输出短答案</p>
+          <div class="card-meta">Sixun Dong et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/swift-svd.html">
+          <div class="card-tag">LLM · 模型压缩</div>
+          <h4>Swift-SVD</h4>
+          <p class="card-tldr">闭合形式激活感知 SVD 压缩，速度快 3-70x 同时保持理论最优性</p>
+          <div class="card-meta">Ruoling Qi et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/msao.html">
+          <div class="card-tag">LLM · 边缘计算 · 多模态</div>
+          <h4>MSAO</h4>
+          <p class="card-tldr">模态稀疏感知的边云协作卸载框架，多模态 LLM 边缘推理延迟降 30%</p>
+          <div class="card-meta">Zheming Yang et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/code-stop.html">
+          <div class="card-tag">LLM · 推理效率</div>
+          <h4>CoDE-Stop</h4>
+          <p class="card-tldr">置信度动态早停：无需训练，Token 用量降 25-50%，匹配全长推理精度</p>
+          <div class="card-meta">Parsa Hosseini et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/leo-llm.html">
+          <div class="card-tag">LLM · System · 卫星网络</div>
+          <h4>LEO Satellite Collaborative LLM</h4>
+          <p class="card-tldr">低轨卫星分布式 LLM 推理，A* 算法优化模型切分，通信开销降 71%</p>
+          <div class="card-meta">Songge Zhang et al. · 2026-04</div>
+        </a>
+
+      </div>
+
+      <h3 class="category-title">🎬 视频生成高效算法</h3>
+      <div class="paper-grid">
+
+        <a class="paper-card" href="papers/video-world-model-survey.html">
+          <div class="card-tag">视频生成 · 综述</div>
+          <h4>Video Generation as World Models（综述）</h4>
+          <p class="card-tldr">从世界模型视角综述高效视频生成：建模范式 / 网络架构 / 推理算法三维分类</p>
+          <div class="card-meta">Muyang He et al. · 2026-03</div>
+        </a>
+
+        <a class="paper-card" href="papers/deltatokworld.html">
+          <div class="card-tag">视频生成 · CVPR 2026</div>
+          <h4>DeltaTok / DeltaWorld</h4>
+          <p class="card-tldr">帧差 delta token 将视频压缩为 1D 序列，FLOPs 减少 2000x，单帧一个 token</p>
+          <div class="card-meta">Tommie Kerssies et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/eflow.html">
+          <div class="card-tag">视频生成 · 扩散模型</div>
+          <h4>EFlow</h4>
+          <p class="card-tldr">Gated Local-Global Attention + 少步训练，推理延迟比迭代模型低 45.3x</p>
+          <div class="card-meta">Dogyun Park et al. · 2026-03</div>
+        </a>
+
+        <a class="paper-card" href="papers/framedit.html">
+          <div class="card-tag">视频生成 · Transformer</div>
+          <h4>FrameDiT</h4>
+          <p class="card-tldr">帧级 Matrix Attention 打破 3D Attention 与 Local Attention 的效率-质量 trade-off</p>
+          <div class="card-meta">Minh Khoa Le et al. · 2026-03</div>
+        </a>
+
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>
