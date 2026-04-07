@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EFlow | 每日论文精读</title>
+<link rel="stylesheet" href="../assets/style.css"/></head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main><div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px"><span class="tag">视频生成</span><span class="tag">扩散模型</span><span class="tag">少步训练</span><span class="tag">Flow Matching</span></div>
+  <h1 class="paper-title">EFlow: Fast Few-Step Video Generator Training from Scratch via Efficient Solution Flow</h1>
+  <div class="paper-title-zh">EFlow：基于高效解路径流从头快速训练少步视频生成器</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Dogyun Park, Yanyu Li, Sergey Tulyakov, Anil Kag</span></div>
+    <div class="meta-item"><label>机构</label><span>Snap Research</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-03-28</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2603.27086" target="_blank">arxiv 2603.27086 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong>同时解决视频扩散的两大瓶颈（Attention 二次复杂度 + 多步采样），通过 Gated Local-Global Attention + 少步 Solution Flow 训练，训练吞吐提升 2.5x，推理延迟比标准迭代模型低 45.3x。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <h3>研究方向</h3>
+    <div class="tag-list"><span class="tag">视频生成</span><span class="tag">扩散模型</span><span class="tag">Flow Matching</span></div>
+    <h3>已有方法的局限性</h3>
+    <ul class="detail-list">
+      <li><strong>双重效率瓶颈：</strong>视频扩散 Transformer 同时面临两个独立瓶颈——每步 Attention 的二次时空复杂度，以及需要数十步迭代采样。这两个问题往往被分别研究，缺乏统一解决方案。</li>
+      <li><strong>少步训练不稳定：</strong>Solution Flow（从噪声时间步 t 直接映射到时间步 s 的函数）在视频规模上难以稳定训练，因为每步的引导目标计算代价极高。</li>
+      <li><strong>Token Dropping 与训练不一致：</strong>现有稀疏 Attention 方法在训练时使用稠密 Attention，推理时使用稀疏 Attention，导致 train-test gap。</li>
+    </ul>
+    <h3>本文核心问题</h3>
+    <p style="font-size:0.9rem;line-height:1.7">能否从头设计一个统一解决「计算复杂度」和「采样步数」双重瓶颈的视频生成框架，同时保持高生成质量？</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <h3>整体框架</h3>
+    <p style="font-size:0.9rem;line-height:1.7;margin-bottom:12px">EFlow 建立在 Solution Flow 目标上（直接预测 t→s 的映射），通过三个互补创新同时解决双重瓶颈：Gated Local-Global Attention 降低每步计算量，Path-Drop Guided Training 降低少步训练代价，Mean-Velocity Additivity 正则化保证极少步数下的生成质量。</p>
+    <h3>关键模块</h3>
+    <div class="module-block"><strong>① Gated Local-Global Attention：</strong>混合 Attention 块，局部 Attention 处理空间近邻 token，全局 Attention 处理跨帧关键 token。创新点：引入可训练 Gate，在训练时即随机 drop 大量 token（激进 token dropping），推理时同样 drop，从根本上消除 train-test gap。Gate 机制确保 token dropping 下的训练稳定性。</div>
+    <div class="module-block"><strong>② Path-Drop Guided Training：</strong>Solution Flow 训练中，正确的引导目标需要运行完整扩散过程，计算代价极高。Path-Drop 用「随机 drop 部分扩散步」的简化轨迹（弱路径）替代完整引导目标，大幅降低训练成本，同时通过理论分析证明这不会显著损害最终生成质量。</div>
+    <div class="module-block"><strong>③ Mean-Velocity Additivity 正则化：</strong>在极低步数（1-2 步）下，Solution Flow 的预测误差会累积导致质量下降。此正则化约束模型的速度场满足「均值可加性」（mean-velocity additivity），数学上保证极少步采样时的收敛性。</div>
+    <h3>与已有方法的本质区别</h3>
+    <p style="font-size:0.9rem;line-height:1.7">现有少步蒸馏方法（如 LCM、DMD）需要预训练好的教师模型；EFlow 是从头训练的统一框架，无需预训练教师。Gated Local-Global Attention 在训练时就集成 token dropping，而非推理时的事后稀疏化。</p>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验与结果</h2>
+    <h3>数据集</h3><p style="font-size:0.9rem">Kinetics-600 · 大规模 text-to-video 数据集</p>
+    <h3>Baseline</h3><p style="font-size:0.9rem">标准 DDPM/Flow Matching 迭代模型 · LCM · AnimateDiff 等</p>
+    <h3>关键结果</h3>
+    <ul class="detail-list">
+      <li>训练吞吐提升 <span class="result-highlight">2.5x</span></li>
+      <li>推理延迟比标准迭代模型低 <span class="result-highlight">45.3x</span></li>
+      <li>生成质量在 Kinetics 和大规模 text-to-video 数据集上具有竞争力</li>
+    </ul>
+    <h3>消融实验</h3>
+    <p style="font-size:0.9rem">分别验证 Gated Local-Global Attention、Path-Drop、Mean-Velocity 正则化三个组件的独立贡献；分析不同采样步数（1/2/4步）下的质量-速度权衡。</p>
+  </div>
+
+  <div class="section">
+    <h2>✨ 贡献点</h2>
+    <div class="contrib-item"><div class="contrib-num">1</div><div>首个统一解决视频生成「Attention 复杂度」和「采样步数」双重瓶颈的从头训练框架，无需预训练教师模型。</div></div>
+    <div class="contrib-item"><div class="contrib-num">2</div><div>Gated Local-Global Attention 将 token dropping 集成进训练，从根本上消除稀疏推理的 train-test gap——这是真正新的架构设计。</div></div>
+    <div class="contrib-item"><div class="contrib-num">3</div><div>Mean-Velocity Additivity 正则化提供了极少步采样质量的理论保证，解决了少步生成质量不稳定的根本问题。</div></div>
+  </div>
+
+  <div class="section">
+    <h2>⚠️ 局限性</h2>
+    <div class="limit-box"><div class="limit-label">作者提及</div>摘要未明确提及局限性。</div>
+    <div class="limit-box warning"><div class="limit-label">潜在问题</div>
+      <ul class="detail-list" style="margin-top:4px">
+        <li>从头训练需要大量计算资源，对无法从头训练的用户不友好（相比蒸馏方法）。</li>
+        <li>Gated Local-Global Attention 中 Gate 的训练稳定性在超大规模（如 5B+ 参数）模型上是否保持尚不明确。</li>
+        <li>极少步数（1步）生成质量与全步数方法仍有差距，创意生成场景可能不够理想。</li>
+      </ul>
+    </div>
+  </div>
+</div></main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv</p></div></footer>
+</body></html>
