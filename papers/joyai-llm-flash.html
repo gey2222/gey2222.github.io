@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>JoyAI-LLM Flash | 每日论文精读</title>
+<link rel="stylesheet" href="../assets/style.css"/></head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main><div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px"><span class="tag">LLM</span><span class="tag">MoE</span><span class="tag">强化学习</span><span class="tag">Token效率</span></div>
+  <h1 class="paper-title">JoyAI-LLM Flash: Advancing Mid-Scale LLMs with Token Efficiency</h1>
+  <div class="paper-title-zh">JoyAI-LLM Flash：以 Token 效率推进中等规模大语言模型</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Aichen Cai et al.（通讯：Xiaodong He）</span></div>
+    <div class="meta-item"><label>机构</label><span>未明确公开（推测工业界团队）</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-03</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.03044" target="_blank">arxiv 2604.03044 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong>提出 48B 总参/2.7B 激活的 MoE 模型，通过纤维理论启发的 FiberPO 强化学习算法与稠密 MTP+QAT 联合训练，在 sub-50B 规模实现竞争性性能与高 token 效率，支持 thinking/non-thinking 双模式切换。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <h3>研究方向</h3>
+    <div class="tag-list"><span class="tag">LLM</span><span class="tag">MoE 架构</span><span class="tag">RL 对齐</span><span class="tag">推理效率</span></div>
+    <h3>已有方法的局限性</h3>
+    <ul class="detail-list">
+      <li><strong>中等规模模型 token 效率低：</strong>sub-50B 模型在保持高性能的同时往往推理时输出冗余 token 过多，实际推理成本高。</li>
+      <li><strong>RL 信任域约束不够精细：</strong>现有 PPO/GRPO 等算法对信任域的约束为全局性的，在多任务分布下容易过拟合某类偏好而损害其他维度。</li>
+      <li><strong>训练推理协同设计不足：</strong>MoE 模型在 QAT 量化与 MTP 多 token 预测联合优化方面缺乏成熟方案，量化部署后推理协同能力容易退化。</li>
+    </ul>
+    <h3>本文核心问题</h3>
+    <p style="font-size:0.9rem;line-height:1.7">如何在 sub-50B 规模内同时实现：接近更大模型的推理性能、高 token 效率（避免冗余推理链）、灵活的 thinking/non-thinking 模式切换？</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <h3>整体框架</h3>
+    <p style="font-size:0.9rem;line-height:1.7;margin-bottom:12px">JoyAI-LLM Flash 是一个完整的 LLM 研发体系。MoE 架构实现参数规模与计算成本解耦；20T token 大规模预训练提供知识基础；SFT → DPO → RL 完整后训练流水线，RL 阶段使用 FiberPO；推理部署通过 QAT 实现低比特量化，且与 MTP 联合训练以维持量化后推理能力。</p>
+    <h3>关键模块</h3>
+    <div class="module-block"><strong>① MoE 极高稀疏架构：</strong>48B 总参数，推理时仅激活 2.7B，稀疏比显著高于同量级竞品（如 DeepSeek-V2 Lite 等）。专家级知识分工使模型在低激活参数下保留大容量知识。</div>
+    <div class="module-block"><strong>② FiberPO 强化学习：</strong>受纤维束理论（Fiber Bundle Theory）启发，将 RL 信任域约束分解为「全局约束」（控制整体策略分布漂移）和「局部约束」（针对不同任务子空间的细粒度调节），两层约束协同实现多尺度稳定性控制，避免多任务 RL 对齐的过拟合问题。</div>
+    <div class="module-block"><strong>③ 稠密 MTP + QAT 联合训练：</strong>多 token 预测头提供额外监督信号提升训练样本效率；QAT 与 MTP 联合优化确保量化模型保留多步推理协同能力；thinking/non-thinking 双模式通过特殊控制 token 切换。</div>
+    <h3>关键公式（FiberPO 约束）</h3>
+    <div class="formula-box">L_FiberPO = L_RL + λ_g · D_KL(π_global ‖ π_ref)<br/>
+                       + Σᵢ λᵢ · D_KL(π_local⁽ⁱ⁾ ‖ π_ref⁽ⁱ⁾)<br/>
+其中全局项控制整体分布偏移，局部项针对第 i 个任务纤维独立调节</div>
+    <h3>与已有方法的本质区别</h3>
+    <p style="font-size:0.9rem;line-height:1.7">与 DeepSeek-V3/Qwen3 等同量级模型相比，核心差异在于 FiberPO 的信任域分解——将全局 KL 散度约束与局部任务级约束分离，理论上在多任务 RL 对齐中具有更好优化稳定性。MTP 与 QAT 的联合训练也是较新的工程实践。</p>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验与结果</h2>
+    <h3>数据集</h3><p style="font-size:0.9rem">MATH · GSM8K · AIME · HumanEval · MBPP · MMLU · BBH 等主流评测基准</p>
+    <h3>Baseline</h3><p style="font-size:0.9rem">DeepSeek-V2-Lite · Qwen2.5-32B 等 sub-50B 主流模型</p>
+    <h3>关键结果</h3>
+    <ul class="detail-list">
+      <li>在 sub-50B 量级多个推理和知识类基准上达到 <span class="result-highlight">SOTA</span></li>
+      <li>Token 效率（单位性能的输出 token 数）显著优于同性能水平基线</li>
+      <li>QAT 后性能损失极小，权重已开源于 Hugging Face</li>
+    </ul>
+    <h3>消融实验</h3>
+    <p style="font-size:0.9rem">验证 FiberPO 各组件（全局/局部约束）的独立贡献；分析 MTP 头数量对训练效率的影响。</p>
+  </div>
+
+  <div class="section">
+    <h2>✨ 贡献点</h2>
+    <div class="contrib-item"><div class="contrib-num">1</div><div>提出 FiberPO——基于纤维理论的信任域分解 RL 算法，在多任务对齐中实现更精细的策略约束，是对 PPO/GRPO 的理论层面改进。</div></div>
+    <div class="contrib-item"><div class="contrib-num">2</div><div>实现 MTP 与 QAT 的联合训练框架，确保量化部署后模型保留多步推理的协同能力——工程与算法的协同创新。</div></div>
+    <div class="contrib-item"><div class="contrib-num">3</div><div>展示了 sub-50B MoE 从预训练到 RL 对齐再到量化部署的完整 token 效率优化方案，并开源模型权重。</div></div>
+  </div>
+
+  <div class="section">
+    <h2>⚠️ 局限性</h2>
+    <div class="limit-box"><div class="limit-label">作者提及</div>摘要未明确提及局限性。</div>
+    <div class="limit-box warning"><div class="limit-label">潜在问题</div>
+      <ul class="detail-list" style="margin-top:4px">
+        <li>FiberPO 中局部纤维的划分方式（如何定义任务子空间）对超参数敏感，实际应用中需要领域知识。</li>
+        <li>20T token 预训练数据组成未公开，外部复现困难。</li>
+        <li>thinking/non-thinking 模式切换的鲁棒性在边界场景（半结构化任务）有待验证。</li>
+      </ul>
+    </div>
+  </div>
+</div></main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv</p></div></footer>
+</body></html>
