@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Multi-Agent Inference | 每日论文精读</title>
+<link rel="stylesheet" href="../assets/style.css"/></head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main><div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px"><span class="tag">LLM</span><span class="tag">System</span><span class="tag">推理效率</span><span class="tag">2026-04-06</span></div>
+  <h1 class="paper-title">Rethinking Model Efficiency: Multi-Agent Inference with Large Models</h1>
+  <div class="paper-title-zh">重思模型效率：大模型的多智能体协作推理</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Sixun Dong, Juhua Hu, Steven Li, Wei Wen, Qi Qian</span></div>
+    <div class="meta-item"><label>机构</label><span>未明确公开</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-06</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.04929" target="_blank">arxiv 2604.04929 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong>揭示 output token 数（而非参数量）是端到端延迟的主要瓶颈，提出让大模型借用小模型的推理链、自身只输出短答案，实现接近完整推理精度同时大幅降低延迟。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <h3>研究方向</h3>
+    <div class="tag-list"><span class="tag">LLM</span><span class="tag">System</span><span class="tag">推理效率</span><span class="tag">多智能体</span></div>
+    <h3>已有方法的局限性</h3>
+    <ul class="detail-list">
+      <li><strong>效率度量维度错误：</strong>传统研究聚焦于参数量压缩（量化、剪枝、蒸馏），忽视了 output token 数对推理延迟的决定性影响。</li>
+      <li><strong>CoT 带来的效率悖论：</strong>Chain-of-Thought 显著提升了准确率，但同时大幅增加了 output token 数，大模型的实际延迟远超预期。</li>
+      <li><strong>现有协作方案方向错误：</strong>Speculative Decoding 关注「加速 token 生成速度」，而非「减少大模型需要生成的 token 总量」——治标不治本。</li>
+    </ul>
+    <h3>本文核心问题</h3>
+    <p style="font-size:0.9rem;line-height:1.7">能否让大模型不生成完整推理链，而是「借阅」小模型的推理过程，只输出简短最终答案，同时保持大模型的准确率优势？</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <h3>整体框架</h3>
+    <p style="font-size:0.9rem;line-height:1.7;margin-bottom:12px">首先通过系统性延迟分析实验，建立 output token 数与延迟的定量关系，证明其线性相关性远强于参数量与延迟的关系——这是全文的核心观察。在此基础上，提出多智能体推理框架：小模型（如 7B）负责生成完整的 CoT 推理链，大模型（如 70B）接收小模型推理 token 作为上下文，仅生成最终短答案。</p>
+    <h3>关键模块</h3>
+    <div class="module-block"><strong>① 延迟归因分析框架：</strong>系统测量不同规模模型在不同推理长度下的端到端延迟，建立定量关系，证明 output token 数是主瓶颈，而非参数量。这是反直觉的核心发现。</div>
+    <div class="module-block"><strong>② 推理 Token 复用机制：</strong>小模型输出完整 CoT → 大模型将小模型推理 token 拼接至输入上下文 → 大模型在「阅读」小模型推理后只生成短答案。大模型的知识容量用于校验和补全，而非重新推导。</div>
+    <div class="module-block"><strong>③ 动态任务分配：</strong>根据任务复杂度决定是否启用推理 token 复用，以及选择合适规模的小模型作为推理代理，平衡精度-延迟 trade-off。</div>
+    <h3>关键公式</h3>
+    <div class="formula-box">设大模型单 token 延迟为 α，小模型为 α'，则：<br/>
+传统大模型延迟：T_large ≈ α · N_out_large<br/>
+协作模式延迟：T_collab = T_small + α · N_ans<br/>
+其中 N_ans ≪ N_out_large，实现延迟大幅降低</div>
+    <h3>与已有方法的本质区别</h3>
+    <p style="font-size:0.9rem;line-height:1.7">Speculative Decoding 是「用小模型加速大模型的 token 生成」；本文是「用小模型替代大模型的推理过程，让大模型只做最终判断」。方向完全不同——前者优化速度，后者减少总量。与蒸馏相比，本文不修改任何模型权重，完全是推理时的部署策略。</p>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验与结果</h2>
+    <h3>数据集</h3><p style="font-size:0.9rem">GSM8K · MATH · MMLU 及多个推理基准</p>
+    <h3>Baseline</h3><p style="font-size:0.9rem">单独大模型（完整 CoT）· 单独小模型 · Speculative Decoding</p>
+    <h3>关键结果</h3>
+    <ul class="detail-list">
+      <li>协作推理延迟显著低于大模型单独推理，性能<span class="result-highlight">接近大模型完整推理结果</span></li>
+      <li>在相同延迟预算下，性能显著优于单独使用小模型</li>
+    </ul>
+    <h3>消融分析</h3>
+    <p style="font-size:0.9rem">分析不同小模型规模对性能-延迟权衡的影响，以及推理 token 复用数量的敏感性。</p>
+  </div>
+
+  <div class="section">
+    <h2>✨ 贡献点</h2>
+    <div class="contrib-item"><div class="contrib-num">1</div><div>首次系统性证明 output token 数（而非参数量）是 VLM/LLM 端到端延迟的主要决定因素，重新定义了「模型效率」的研究维度。</div></div>
+    <div class="contrib-item"><div class="contrib-num">2</div><div>提出推理 token 复用范式——无需修改任何模型权重，纯推理时部署策略，工程可行性高。</div></div>
+    <div class="contrib-item"><div class="contrib-num">3</div><div>建立了多智能体推理的定量分析框架，为后续系统层优化提供理论指导。</div></div>
+  </div>
+
+  <div class="section">
+    <h2>⚠️ 局限性</h2>
+    <div class="limit-box"><div class="limit-label">作者提及</div>摘要未明确提及局限性。</div>
+    <div class="limit-box warning"><div class="limit-label">潜在问题</div>
+      <ul class="detail-list" style="margin-top:4px">
+        <li><strong>错误传播风险：</strong>小模型推理链若有误，大模型可能被错误逻辑误导，错误传播机制未被充分讨论。</li>
+        <li><strong>Context 长度压力：</strong>将小模型推理 token 拼接至大模型输入，仍会增加大模型的 KV Cache 负担。</li>
+        <li>对需要大模型独特知识（而非推理能力）的任务，优势可能有限。</li>
+      </ul>
+    </div>
+  </div>
+</div></main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv</p></div></footer>
+</body></html>
