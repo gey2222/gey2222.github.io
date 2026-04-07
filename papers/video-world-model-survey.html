@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Video Generation World Models Survey | 每日论文精读</title>
+<link rel="stylesheet" href="../assets/style.css"/></head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main><div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px"><span class="tag">视频生成</span><span class="tag">世界模型</span><span class="tag">综述</span></div>
+  <h1 class="paper-title">Video Generation Models as World Models: Efficient Paradigms, Architectures and Algorithms</h1>
+  <div class="paper-title-zh">视频生成模型作为世界模型：高效范式、架构与算法（综述）</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Muyang He, Hanzhong Guo, Junxiong Lin, Yizhou Yu</span></div>
+    <div class="meta-item"><label>机构</label><span>未明确公开</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-03-30</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2603.28489" target="_blank">arxiv 2603.28489 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong>首篇从「效率」视角系统综述视频生成世界模型的 Survey，提出建模范式/网络架构/推理算法三维分类体系，指出效率是视频生成器演化为通用世界模拟器的根本前提。</div>
+
+  <div class="section">
+    <h2>📌 综述背景与动机</h2>
+    <h3>研究方向</h3>
+    <div class="tag-list"><span class="tag">视频生成</span><span class="tag">世界模型</span><span class="tag">扩散模型</span><span class="tag">自回归生成</span></div>
+    <h3>当前领域的核心矛盾</h3>
+    <ul class="detail-list">
+      <li><strong>能力 vs 效率的鸿沟：</strong>视频生成模型已能模拟复杂物理动态和长时因果关系，但时空建模的计算成本极高，远不满足实时世界模拟的需求。</li>
+      <li><strong>缺乏系统性效率视角：</strong>现有视频生成综述多关注生成质量和多样性，较少从效率维度系统梳理各类方法。</li>
+    </ul>
+    <h3>综述核心论点</h3>
+    <p style="font-size:0.9rem;line-height:1.7">效率不是锦上添花，而是视频生成器演化为「通用实时鲁棒世界模拟器」的根本前提条件。</p>
+  </div>
+
+  <div class="section">
+    <h2>📖 综述框架：三维分类体系</h2>
+    <div class="module-block"><strong>① 高效建模范式（Efficient Modeling Paradigms）：</strong>包括压缩表示（如 latent space、token 化）、条件生成（文本/图像/动作驱动）、世界模型的不同建模目标（预测 vs 生成）等，从建模哲学层面分类。</div>
+    <div class="module-block"><strong>② 高效网络架构（Efficient Network Architectures）：</strong>涵盖 DiT（扩散 Transformer）、U-Net 变体、自回归模型、混合架构等，重点分析各类架构在时空建模效率上的设计权衡——包括 Attention 复杂度、token 化策略、时序建模机制等。</div>
+    <div class="module-block"><strong>③ 高效推理算法（Efficient Inference Algorithms）：</strong>包括少步采样（Consistency/Flow Matching）、缓存复用、量化/剪枝在视频生成场景的适配，以及专为视频生成设计的加速算法。</div>
+
+    <h3>应用场景映射</h3>
+    <p style="font-size:0.9rem;line-height:1.7">综述重点分析三大下游应用：<strong>自动驾驶</strong>（需要高保真物理仿真）、<strong>具身 AI</strong>（需要低延迟交互式生成）、<strong>游戏仿真</strong>（需要实时长序列一致性生成）。</p>
+  </div>
+
+  <div class="section">
+    <h2>✨ 综述价值</h2>
+    <div class="contrib-item"><div class="contrib-num">1</div><div>首篇专注「效率」视角的视频生成世界模型综述，填补了现有综述的空白。</div></div>
+    <div class="contrib-item"><div class="contrib-num">2</div><div>三维分类体系提供了清晰的研究地图，有助于研究者快速定位方法所属类别和当前 SOTA。</div></div>
+    <div class="contrib-item"><div class="contrib-num">3</div><div>明确指出「效率是第一性原则」的论断，为该领域未来研究方向提供了重要指引。</div></div>
+  </div>
+
+  <div class="section">
+    <h2>⚠️ 局限性</h2>
+    <div class="limit-box warning"><div class="limit-label">潜在问题</div>
+      <ul class="detail-list" style="margin-top:4px">
+        <li>综述覆盖范围截止 2026 年初，视频生成领域发展迅速，部分最新工作可能未被纳入。</li>
+        <li>三维分类体系的边界可能存在交叉，某些方法难以清晰归类。</li>
+      </ul>
+    </div>
+  </div>
+</div></main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv</p></div></footer>
+</body></html>
