@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HaloProbe | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main>
+<div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px">
+    <span class="tag">VLM</span><span class="tag">幻觉检测</span><span class="tag">贝叶斯</span><span class="tag">多模态</span>
+  </div>
+  <h1 class="paper-title">HaloProbe: Bayesian Detection and Mitigation of Object Hallucinations in Vision-Language Models</h1>
+  <div class="paper-title-zh">HaloProbe：视觉语言模型中对象幻觉的贝叶斯检测与缓解</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Reihaneh Zohrabi, Hosein Hasani, Akshita Gupta, Mahdieh Soleymani Baghshah, Anna Rohrbach, Marcus Rohrbach</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-07</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.06165" target="_blank">arxiv 2604.06165 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong> 揭示 attention-based 幻觉检测的 Simpson's 悖论（token 位置和对象重复是隐藏混淆因子）。HaloProbe 用贝叶斯框架分离内外部信号，作为外部评分引导解码，比侵入式方法更有效且不损流畅度。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <p style="font-size:0.9rem;line-height:1.7">大型视觉语言模型在图像描述中会产生对象幻觉问题。现有方法普遍用模型对视觉 token 的 attention 权重作为检测信号，但本文揭示这存在根本性缺陷。</p>
+    <h3>核心发现：Simpson's 悖论</h3>
+    <ul class="detail-list">
+      <li>Token 位置和对象在描述中的重复次数是隐藏混淆因子（hidden confounders）。</li>
+      <li>聚合统计后，attention 趋势会反转或消失——这正是 Simpson's 悖论的经典表现。</li>
+      <li>因此，粗粒度 attention 分析作为幻觉检测信号是不可靠的。</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法：HaloProbe</h2>
+    <div class="module-block"><strong>贝叶斯分解框架：</strong>将 token 级幻觉概率估计分解为外部描述统计（token 位置、对象重复等）和内部解码信号的乘积，分别建模后合并为后验概率。</div>
+    <div class="module-block"><strong>平衡训练：</strong>通过平衡训练隔离内部解码证据，消除外部混淆因子的影响；再结合外部特征学习先验，恢复真实后验。</div>
+    <div class="module-block"><strong>非侵入式缓解：</strong>将 HaloProbe 作为外部评分信号用于解码引导，不修改模型内部参数，避免侵入式方法降低输出质量的问题。</div>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验结果</h2>
+    <ul class="detail-list">
+      <li>HaloProbe 引导解码比 SOTA 侵入式干预方法更有效地减少幻觉。</li>
+      <li>保持输出流畅度和实用性，无质量损失。</li>
+    </ul>
+  </div>
+</div>
+</main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p></div></footer>
+</body>
+</html>

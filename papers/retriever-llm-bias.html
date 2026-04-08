@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Retriever Bias | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main>
+<div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px">
+    <span class="tag">检索</span><span class="tag">RAG</span><span class="tag">LLM 偏差</span><span class="tag">对比学习</span>
+  </div>
+  <h1 class="paper-title">Data, Not Model: Explaining Bias toward LLM Texts in Neural Retrievers</h1>
+  <div class="paper-title-zh">数据而非模型：解释神经检索器对 LLM 文本的偏好</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Wei Huang, Keping Bi, Yinqiong Cai, Wei Chen, Jiafeng Guo, Xueqi Cheng</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-07</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.06163" target="_blank">arxiv 2604.06163 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong> 检索器偏好 LLM 生成文本的根源在训练数据偏差（正/负样本的流畅度、术语特异性差异），而非模型本身固有缺陷。提出两种有效去偏方案。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <p style="font-size:0.9rem;line-height:1.7">近期研究发现神经检索器普遍存在来源偏差（source bias）：即便语义相似，也倾向于优先检索 LLM 生成的文段而非人类撰写的文段。这被认为是检索器的固有缺陷，引发了对信息获取系统公平性和可靠性的广泛担忧。本文挑战了这一观点。</p>
+  </div>
+
+  <div class="section">
+    <h2>🔍 核心发现</h2>
+    <div class="module-block"><strong>偏差来源定位：</strong>检索训练数据集中正负样本之间存在系统性的非语义差异（流畅度、术语特异性等），这些差异与 LLM 和人类文本的差异高度重合。</div>
+    <div class="module-block"><strong>Embedding 空间分析：</strong>负→正样本方向与"人类撰写→LLM 生成"文本方向在 embedding 空间高度对齐。</div>
+    <div class="module-block"><strong>理论证明：</strong>检索器在对比学习过程中不可避免地吸收训练数据中的这些人为差异，导致对 LLM 文本的系统性偏好。</div>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 去偏方案</h2>
+    <div class="module-block"><strong>方案一：数据清洗</strong> — 减少训练数据中正负样本的人为非语义差异，从根源消除偏差。</div>
+    <div class="module-block"><strong>方案二：Embedding 去偏</strong> — 在 embedding 空间中减去 LLM 文本向量在偏差方向上的投影，后处理校正。</div>
+    <p style="font-size:0.9rem;line-height:1.7;margin-top:8px">两种方案均大幅降低来源偏差，验证了偏差源于数据而非模型的核心论断。</p>
+  </div>
+</div>
+</main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p></div></footer>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Target Policy Optimization | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main>
+<div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px">
+    <span class="tag">LLM</span><span class="tag">强化学习</span><span class="tag">RLVR</span><span class="tag">策略优化</span>
+  </div>
+  <h1 class="paper-title">Target Policy Optimization (TPO)</h1>
+  <div class="paper-title-zh">目标策略优化</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Jean Kaddour</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-07</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.06159" target="_blank">arxiv 2604.06159 ↗</a></span></div>
+    <div class="meta-item"><label>代码</label><span><a href="https://github.com/JeanKaddour/tpo" target="_blank">GitHub ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong> 将 RL 中「哪些 completion 应获得概率质量」与「参数如何更新」解耦。先构造目标分布 q，再用交叉熵拟合策略到 q。在稀疏奖励场景下显著优于 PPO/GRPO/DG，简洁且高效。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <p style="font-size:0.9rem;line-height:1.7">在 RL 中，给定 prompt 后对模型采样一批 completion 并打分，需要回答两个问题：(1) 哪些 completion 应该获得更高概率？(2) 参数应该如何移动来实现这种改变？标准策略梯度方法将两个问题耦合，导致更新可能因学习率、clipping 等超参数过冲或欠冲，在稀疏奖励下尤为明显。</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <div class="module-block"><strong>目标分布构造：</strong>给定打过分的 completions，TPO 构造目标分布 q<sub>i</sub> ∝ p<sub>i</sub><sup>old</sup> exp(u<sub>i</sub>)，其中 u<sub>i</sub> 为归一化奖励信号。</div>
+    <div class="module-block"><strong>策略拟合：</strong>用交叉熵将当前策略拟合到目标分布 q，而非直接优化奖励。损失对采样 completion logits 的梯度为 p<sup>θ</sup> − q，当策略匹配目标分布时自然归零，天然防止过拟合。</div>
+    <h3>关键公式</h3>
+    <div class="formula-box">目标分布：q_i ∝ p_i^old · exp(u_i)<br/>梯度：∂L/∂logit_i = p^θ_i − q_i</div>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验结果</h2>
+    <ul class="detail-list">
+      <li>表格 bandit、Transformer 序列任务、十亿参数 LLM RLVR 上均有测试。</li>
+      <li>简单任务上与 PG/PPO/GRPO/DG 持平。</li>
+      <li><strong>稀疏奖励场景下显著优于所有对比方法。</strong></li>
+    </ul>
+  </div>
+</div>
+</main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p></div></footer>
+</body>
+</html>

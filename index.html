@@ -17,6 +17,102 @@
   <main class="container">
     <section class="date-section">
       <div class="date-header">
+        <h2>🗓️ 2026-04-09</h2>
+        <span class="badge badge-theme">LLM · 多模态 · 机器人 · 检索</span>
+      </div>
+      <p class="date-desc">重点方向：LLM 训练/对齐、多模态 Embedding、具身智能、检索去偏 · 共 9 篇论文</p>
+
+      <h3 class="category-title">🧠 LLM / 语言模型</h3>
+      <div class="paper-grid">
+
+        <a class="paper-card" href="papers/inplace-ttt.html">
+          <div class="card-tag">LLM · Test-Time Training · ICLR 2026 Oral</div>
+          <h4>In-Place Test-Time Training</h4>
+          <p class="card-tldr">无需从头重训即可给 LLM 加上测试时训练能力，MLP 投影矩阵作 fast weights，4B 模型 128k 上下文 SOTA</p>
+          <div class="card-meta">Guhao Feng et al. · ByteDance · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/tpo.html">
+          <div class="card-tag">LLM · 强化学习 · RLVR</div>
+          <h4>Target Policy Optimization (TPO)</h4>
+          <p class="card-tldr">将"选哪些 completion"与"参数如何更新"解耦，稀疏奖励下显著优于 PPO/GRPO/DG</p>
+          <div class="card-meta">Jean Kaddour · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/lse-mtp.html">
+          <div class="card-tag">LLM · World Model · ACL 2026</div>
+          <h4>LSE-MTP</h4>
+          <p class="card-tldr">理论证明 MTP 推动世界模型收敛，LSE-MTP 通过锚定真实隐状态轨迹消除结构性幻觉</p>
+          <div class="card-meta">Qimin Zhong et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/exclusive-unlearning.html">
+          <div class="card-tag">LLM · 安全对齐 · Unlearning</div>
+          <h4>Exclusive Unlearning</h4>
+          <p class="card-tldr">反向遗忘：只保留目标领域，其余全遗忘，广谱防御 jailbreak 同时保留特定领域能力</p>
+          <div class="card-meta">Mutsumi Sasaki et al. · 2026-04</div>
+        </a>
+
+      </div>
+
+      <h3 class="category-title">👁️ 多模态 / 视觉</h3>
+      <div class="paper-grid">
+
+        <a class="paper-card" href="papers/haloprobe.html">
+          <div class="card-tag">VLM · 幻觉检测 · 贝叶斯</div>
+          <h4>HaloProbe</h4>
+          <p class="card-tldr">揭示 attention 幻觉检测的 Simpson's 悖论，贝叶斯框架外部引导解码，非侵入式减少幻觉</p>
+          <div class="card-meta">Reihaneh Zohrabi et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/mmemb-r1.html">
+          <div class="card-tag">多模态 · Embedding · MMEB-V2 SOTA</div>
+          <h4>MMEmb-R1</h4>
+          <p class="card-tldr">反事实干预选有益推理路径 + RL 自适应控制触发，4B 参数 MMEB-V2 达 71.2 分 SOTA</p>
+          <div class="card-meta">Yuchi Wang et al. · 2026-04</div>
+        </a>
+
+      </div>
+
+      <h3 class="category-title">🤖 机器人 / 具身智能</h3>
+      <div class="paper-grid">
+
+        <a class="paper-card" href="papers/action-images.html">
+          <div class="card-tag">机器人 · 视频生成 · 零样本</div>
+          <h4>Action Images</h4>
+          <p class="card-tldr">将 7-DoF 动作翻译为像素对齐的多视角"动作图像"，视频模型直接充当零样本策略，RLBench SOTA</p>
+          <div class="card-meta">Haoyu Zhen et al. · 2026-04</div>
+        </a>
+
+      </div>
+
+      <h3 class="category-title">🔍 检索 / RAG</h3>
+      <div class="paper-grid">
+
+        <a class="paper-card" href="papers/retriever-llm-bias.html">
+          <div class="card-tag">检索 · RAG · 偏差分析</div>
+          <h4>Data, Not Model: Retriever Bias</h4>
+          <p class="card-tldr">检索器偏好 LLM 文本源于训练数据偏差，非模型固有缺陷；两种去偏方案均显著有效</p>
+          <div class="card-meta">Wei Huang et al. · 2026-04</div>
+        </a>
+
+      </div>
+
+      <h3 class="category-title">🛠️ Multi-agent / 工具</h3>
+      <div class="paper-grid">
+
+        <a class="paper-card" href="papers/paper-circle.html">
+          <div class="card-tag">Multi-agent · 文献发现 · ACL 2026 Oral</div>
+          <h4>Paper Circle</h4>
+          <p class="card-tldr">多智能体文献发现与分析系统，Discovery + Analysis 双 Pipeline，全流程可复现输出</p>
+          <div class="card-meta">Komal Kumar et al. · 2026-04</div>
+        </a>
+
+      </div>
+    </section>
+
+    <section class="date-section">
+      <div class="date-header">
         <h2>🗓️ 2026-04-07</h2>
         <span class="badge badge-theme">Efficient AI Algorithms</span>
       </div>

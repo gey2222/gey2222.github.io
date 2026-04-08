@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MMEmb-R1 | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main>
+<div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px">
+    <span class="tag">多模态</span><span class="tag">Embedding</span><span class="tag">CoT 推理</span><span class="tag">强化学习</span>
+  </div>
+  <h1 class="paper-title">MMEmb-R1: Reasoning-Enhanced Multimodal Embedding with Pair-Aware Selection and Adaptive Control</h1>
+  <div class="paper-title-zh">MMEmb-R1：带有成对感知选择与自适应控制的推理增强多模态 Embedding</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Yuchi Wang, Haiyang Yu, Weikang Bian, Jiefeng Long, Xiao Liang, Chao Feng, Hongsheng Li</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-07</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.06156" target="_blank">arxiv 2604.06156 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong> 将 CoT 推理引入多模态 Embedding 学习，通过反事实干预挑选真正有益的推理路径，RL 自适应控制推理触发时机。4B 参数在 MMEB-V2 达到 71.2 分 SOTA，同时大幅降低推理开销。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <p style="font-size:0.9rem;line-height:1.7">MLLM 已成功应用于多模态 Embedding 任务，但其生成式推理能力尚未被充分利用。直接将 CoT 推理引入 Embedding 学习面临两大根本挑战：</p>
+    <ul class="detail-list">
+      <li><strong>结构性错位：</strong>实例级推理与成对对比监督之间存在错位，模型可能仅学会推理格式的表面特征（捷径行为），而非真正的语义对齐。</li>
+      <li><strong>推理并非总有益：</strong>对所有输入强制推理会引入不必要的计算和延迟，对简单样本反而会遮盖显著的语义信号。</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <div class="module-block"><strong>成对感知推理选择（Pair-Aware Selection）：</strong>将推理建模为隐变量，通过反事实干预识别真正有助于 query-target 对齐的推理路径，过滤无效或有害推理。</div>
+    <div class="module-block"><strong>自适应控制（Adaptive Control via RL）：</strong>采用强化学习训练模型学会"何时调用推理"，仅在推理确实有益时触发，对简单样本跳过推理，大幅降低计算开销和推理延迟。</div>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验结果</h2>
+    <ul class="detail-list">
+      <li>在 MMEB-V2 benchmark 上达到 71.2 分，仅用 4B 参数建立新 SOTA。</li>
+      <li>相比全量推理方案显著降低推理开销和端到端延迟。</li>
+    </ul>
+  </div>
+</div>
+</main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p></div></footer>
+</body>
+</html>

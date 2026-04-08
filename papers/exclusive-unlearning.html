@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exclusive Unlearning | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main>
+<div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px">
+    <span class="tag">LLM</span><span class="tag">Machine Unlearning</span><span class="tag">安全对齐</span><span class="tag">Jailbreak 防御</span>
+  </div>
+  <h1 class="paper-title">Exclusive Unlearning</h1>
+  <div class="paper-title-zh">排他性遗忘</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Mutsumi Sasaki, Kouta Nakayama, Yusuke Miyao, Yohei Oseki, Masaru Isonuma</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-07</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.06154" target="_blank">arxiv 2604.06154 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong> 反向遗忘策略：不逐一列举要删除的有害内容，而是"大范围遗忘保留目标以外的一切"。有效防御多样化 jailbreak，同时保留医学/数学等特定领域能力。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <p style="font-size:0.9rem;line-height:1.7">在医疗、教育等工业场景部署 LLM 时，生成有害内容是重大挑战。现有机器遗忘方法逐一列举遗忘目标，但有害内容的多样性使全面删除极为困难——攻击者总能找到未被明确列举的路径（jailbreak）。</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <div class="module-block"><strong>排他性遗忘（Exclusive Unlearning）：</strong>翻转遗忘视角——不是"列出要忘掉什么"，而是"列出要保留什么，其余全部遗忘"。通过大范围遗忘实现广谱有害内容删除。</div>
+    <div class="module-block"><strong>保留目标设定：</strong>明确指定需要保留的领域知识和表达（如医学、数学），通过这一约束引导遗忘方向，确保模型保留有用能力。</div>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验结果</h2>
+    <ul class="detail-list">
+      <li>对多种输入（包括各类 jailbreak 变体）实现广谱安全防御。</li>
+      <li>同时保留医学和数学等指定领域的多样化指令响应能力。</li>
+      <li>解决了列举式遗忘"打地鼠"困境：攻击者无法通过未列举路径绕过防护。</li>
+    </ul>
+  </div>
+</div>
+</main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p></div></footer>
+</body>
+</html>

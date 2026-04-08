@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paper Circle | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main>
+<div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px">
+    <span class="tag">Multi-agent</span><span class="tag">文献发现</span><span class="tag">知识图谱</span><span class="tag">ACL 2026 Oral</span>
+  </div>
+  <h1 class="paper-title">Paper Circle: An Open-source Multi-agent Research Discovery and Analysis Framework</h1>
+  <div class="paper-title-zh">Paper Circle：开源多智能体研究发现与分析框架</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Komal Kumar, Aman Chadha, Salman Khan, Fahad Shahbaz Khan, Hisham Cholakkal</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-07</span></div>
+    <div class="meta-item"><label>会议</label><span>ACL 2026 Main (Oral)</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.06170" target="_blank">arxiv 2604.06170 ↗</a></span></div>
+    <div class="meta-item"><label>网站</label><span><a href="https://papercircle.vercel.app/" target="_blank">papercircle.vercel.app ↗</a></span></div>
+    <div class="meta-item"><label>代码</label><span><a href="https://github.com/MAXNORM8650/papercircle" target="_blank">GitHub ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong> 多智能体文献发现与分析系统：Discovery Pipeline（多源检索 + 多标准评分）+ Analysis Pipeline（结构化知识图谱 + 图感知 QA），全步骤输出 JSON/CSV/BibTeX/Markdown/HTML，完全可复现。ACL 2026 Oral。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <p style="font-size:0.9rem;line-height:1.7">科学文献的快速增长使研究者难以高效发现、评估和综合相关工作。LLM 在理解用户意图和工具调用上展现出强大潜力，Paper Circle 旨在将这种能力系统化地应用于学术文献管理全流程。</p>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 系统架构</h2>
+    <div class="module-block"><strong>Discovery Pipeline：</strong>
+      <ul style="margin-top:6px;font-size:0.85rem;line-height:1.7">
+        <li>离线 + 在线多源检索（ArXiv、Semantic Scholar 等）</li>
+        <li>多标准评分（相关性、新颖性、引用影响力等）</li>
+        <li>多样性感知排序，避免结果同质化</li>
+        <li>结构化输出（JSON/CSV/BibTeX/Markdown/HTML）</li>
+      </ul>
+    </div>
+    <div class="module-block"><strong>Analysis Pipeline：</strong>
+      <ul style="margin-top:6px;font-size:0.85rem;line-height:1.7">
+        <li>将单篇论文转化为带类型节点的知识图谱（概念、方法、实验、图表）</li>
+        <li>图感知 QA：基于知识图谱结构进行问答</li>
+        <li>覆盖度验证：检测综述是否遗漏重要相关工作</li>
+      </ul>
+    </div>
+    <div class="module-block"><strong>实现：</strong>基于 coder LLM 的多智能体编排框架，每个 agent 步骤均生成完全可复现的同步输出。</div>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验结果</h2>
+    <ul class="detail-list">
+      <li>在论文检索任务上报告 Hit Rate、MRR、Recall@K。</li>
+      <li>在综述生成任务上评估覆盖质量。</li>
+      <li>更强的 agent 模型带来一致性提升，验证框架可随模型进化持续改善。</li>
+    </ul>
+  </div>
+</div>
+</main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p></div></footer>
+</body>
+</html>

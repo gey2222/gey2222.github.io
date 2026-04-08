@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Action Images | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main>
+<div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px">
+    <span class="tag">机器人</span><span class="tag">具身智能</span><span class="tag">视频生成</span><span class="tag">世界模型</span>
+  </div>
+  <h1 class="paper-title">Action Images: End-to-End Policy Learning via Multiview Video Generation</h1>
+  <div class="paper-title-zh">动作图像：通过多视角视频生成的端到端策略学习</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Haoyu Zhen, Zixian Gao, Qiao Sun, Yilin Zhao, Yuncong Yang, Yilun Du, Tsun-Hsuan Wang, Yi-Ling Qiao, Chuang Gan</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-07</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.06168" target="_blank">arxiv 2604.06168 ↗</a></span></div>
+    <div class="meta-item"><label>项目页</label><span><a href="https://actionimages.github.io/" target="_blank">actionimages.github.io ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong> 将 7-DoF 机器人动作翻译成像素对齐的多视角"动作图像"，让视频扩散模型直接充当零样本策略，无需独立 policy head。在 RLBench 和真实场景取得最强零样本成功率。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <p style="font-size:0.9rem;line-height:1.7">World Action Models (WAMs) 作为机器人策略学习的新方向，能够利用强大的视频主干建模未来状态。但现有方案面临两大局限：</p>
+    <ul class="detail-list">
+      <li>依赖独立的动作模块，或使用非像素对齐的动作表示，难以充分挖掘预训练视频模型的知识。</li>
+      <li>跨视角和跨环境的迁移能力受限。</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <div class="module-block"><strong>动作图像（Action Images）：</strong>将 7-DoF 机器人动作翻译为像素对齐的多视角动作视频，在 2D 像素空间显式追踪机械臂运动轨迹，使动作表示具有可解释性和视觉一致性。</div>
+    <div class="module-block"><strong>零样本策略：</strong>像素对齐的动作表示让视频主干本身直接充当策略——视频模型预测的下一帧动作图像即为控制信号，无需额外的 policy head 或动作解码模块。</div>
+    <div class="module-block"><strong>统一多任务模型：</strong>同一模型支持：(1) 视频-动作联合生成；(2) 动作条件视频生成；(3) 动作标注（从视频反向提取动作）。三种能力共享统一表示。</div>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验结果</h2>
+    <ul class="detail-list">
+      <li>在 RLBench benchmark 上取得最强零样本成功率。</li>
+      <li>真实场景评测中同样表现最优。</li>
+      <li>视频-动作联合生成质量优于先前视频空间世界模型方法。</li>
+    </ul>
+  </div>
+</div>
+</main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p></div></footer>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>In-Place TTT | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main>
+<div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px">
+    <span class="tag">LLM</span><span class="tag">Test-Time Training</span><span class="tag">持续学习</span><span class="tag">ICLR 2026 Oral</span>
+  </div>
+  <h1 class="paper-title">In-Place Test-Time Training</h1>
+  <div class="paper-title-zh">原位测试时训练</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Guhao Feng, Shengjie Luo, Kai Hua, Ge Zhang, Di He, Wenhao Huang, Tianle Cai</span></div>
+    <div class="meta-item"><label>机构</label><span>ByteDance Seed</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-07</span></div>
+    <div class="meta-item"><label>会议</label><span>ICLR 2026 Oral</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.06169" target="_blank">arxiv 2604.06169 ↗</a></span></div>
+    <div class="meta-item"><label>代码</label><span><a href="https://github.com/ByteDance-Seed/In-Place-TTT" target="_blank">GitHub ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong> 无需从头重训即可让 LLM 具备测试时训练能力。以 MLP 最后投影矩阵为 fast weights，用对齐 next-token prediction 的目标取代通用重建目标，chunk-wise 更新支持上下文并行。4B 模型在 128k 上下文任务中持续优于同类 TTT 方法。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <h3>核心问题</h3>
+    <p style="font-size:0.9rem;line-height:1.7">"训练后部署"的静态范式限制了 LLM 动态适应连续信息流的能力。Test-Time Training (TTT) 提供了一种在推理时更新部分参数（fast weights）的方向，但在当前 LLM 生态中面临三大障碍：架构不兼容、计算低效，以及语言建模目标与 TTT 训练目标的错位。</p>
+    <h3>已有方法的局限</h3>
+    <ul class="detail-list">
+      <li><strong>架构不兼容：</strong>现有 TTT 方法通常依赖特定的 RNN-like 架构，无法 drop-in 应用于主流 Transformer LLM。</li>
+      <li><strong>目标错位：</strong>通用重建目标与语言建模的 next-token prediction 目标不一致，导致 fast weights 更新方向偏差。</li>
+      <li><strong>计算低效：</strong>缺乏与上下文并行兼容的高效更新机制。</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法</h2>
+    <h3>整体框架</h3>
+    <p style="font-size:0.9rem;line-height:1.7;margin-bottom:12px">In-Place TTT 将普遍存在的 MLP 块的最终投影矩阵作为 fast weights，实现对任意 LLM 的"原位"增强，无需修改其余架构或从头重训。</p>
+    <div class="module-block"><strong>① Fast Weights 选择：</strong>选取 MLP 最后投影矩阵作为 fast weights，覆盖所有 Transformer LLM 的 MLP 结构，实现真正的 drop-in 增强。</div>
+    <div class="module-block"><strong>② 对齐的 TTT 目标：</strong>用理论推导的、与 next-token prediction 显式对齐的目标函数取代 TTT 通用重建目标，确保 fast weights 更新方向与语言建模任务一致。</div>
+    <div class="module-block"><strong>③ Chunk-wise 更新机制：</strong>将序列分块进行 fast weights 更新，支持上下文并行，高度可扩展。</div>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验结果</h2>
+    <ul class="detail-list">
+      <li>作为 drop-in 增强：4B 参数模型在 128k 上下文任务上持续优于竞争 TTT 方法。</li>
+      <li>从头预训版本：一致优于同类 TTT 相关基线。</li>
+      <li>消融实验验证了各设计选择的有效性。</li>
+    </ul>
+  </div>
+</div>
+</main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p></div></footer>
+</body>
+</html>

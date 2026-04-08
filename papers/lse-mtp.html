@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LSE-MTP | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+<header><div class="container"><h1>📚 每日论文精读</h1></div></header>
+<main>
+<div class="paper-detail">
+  <a class="back-link" href="../index.html">← 返回首页</a>
+  <div class="tag-list" style="margin-bottom:12px">
+    <span class="tag">LLM</span><span class="tag">World Model</span><span class="tag">Multi-Token Prediction</span><span class="tag">ACL 2026</span>
+  </div>
+  <h1 class="paper-title">Toward Consistent World Models with Multi-Token Prediction and Latent Semantic Enhancement (LSE-MTP)</h1>
+  <div class="paper-title-zh">面向一致性世界模型的多 Token 预测与隐语义增强</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>作者</label><span>Qimin Zhong, Hao Liao, Haiming Qin, Mingyang Zhou, Rui Mao, Wei Chen, Naipeng Chao</span></div>
+    <div class="meta-item"><label>发表时间</label><span>2026-04-07</span></div>
+    <div class="meta-item"><label>会议</label><span>ACL 2026 Main Conference</span></div>
+    <div class="meta-item"><label>论文链接</label><span><a href="https://arxiv.org/abs/2604.06155" target="_blank">arxiv 2604.06155 ↗</a></span></div>
+  </div>
+  <div class="tldr-box"><strong>TL;DR</strong> 理论证明 MTP 通过梯度耦合推动 LLM 内部信念状态收敛，但标准 MTP 会诱发"结构性幻觉"（隐空间走捷径）。LSE-MTP 将预测锚定到真实隐状态轨迹，消除幻觉、增强鲁棒性。</div>
+
+  <div class="section">
+    <h2>📌 研究背景与动机</h2>
+    <p style="font-size:0.9rem;line-height:1.7">LLM 是否构建了连贯的内部世界模型仍有争议。Multi-Token Prediction (MTP) 相比 Next-Token Prediction (NTP) 展示了更结构化的表示学习潜力，但其机制和局限尚未被系统分析。</p>
+    <h3>核心发现</h3>
+    <ul class="detail-list">
+      <li><strong>MTP 的归纳偏置：</strong>理论分析表明 MTP 通过梯度耦合机制诱导表示收缩性（contractivity），推动内部信念状态收敛，有助于构建一致的世界模型。</li>
+      <li><strong>结构性幻觉：</strong>标准 MTP 的离散 token 监督会鼓励模型在隐空间学习非法捷径（违反环境约束的表示），即"结构性幻觉"。</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>⚙️ 核心方法：LSE-MTP</h2>
+    <div class="module-block"><strong>Latent Semantic Enhancement：</strong>在 MTP 训练中将预测锚定到真实的隐状态轨迹，而非仅依赖离散 token 监督。通过这种方式，弥合离散 token 与连续状态表示之间的语义鸿沟。</div>
+    <div class="module-block"><strong>目标：</strong>在保留 MTP 促进世界模型构建优势的同时，消除结构性幻觉带来的负面影响。</div>
+  </div>
+
+  <div class="section">
+    <h2>📊 实验结果</h2>
+    <ul class="detail-list">
+      <li>在合成图谱和真实曼哈顿出租车行程数据集上验证。</li>
+      <li>LSE-MTP 有效提升表示对齐质量，减少结构性幻觉，增强对扰动的鲁棒性。</li>
+    </ul>
+  </div>
+</div>
+</main>
+<footer><div class="container"><p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p></div></footer>
+</body>
+</html>
