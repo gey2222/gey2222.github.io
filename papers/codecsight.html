@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodecSight: Video Codec Signals for VLM Inference | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">CodecSight: Leveraging Video Codec Signals for Efficient Streaming VLM Inference</h1>
+      <p class="subtitle">Yulin Zou, Yan Chen, Wenyan Chen et al. · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-video">视频流分析 · VLM</span>
+      <span class="badge badge-theme">编解码器信号 · 端到端优化</span>
+      <a href="https://arxiv.org/abs/2604.06036" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv: 2604.06036 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>视频编解码器天然输出运动向量和残差信号——这是免费的帧间冗余信息。CodecSight 将编解码器信号同时用于优化 ViT 和 LLM 两个阶段，在视频流 VLM 推理上实现端到端加速，无需离线训练或在线冗余检测开销。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>视频流分析（如安防监控、直播内容理解）是 VLM 服务的重要场景，但高频推理带来巨大计算成本。</p>
+      <p>现有冗余利用方法的局限：
+        <ul>
+          <li><strong>局部优化</strong>：只优化 ViT 或 LLM 其中一个阶段，遗留大量优化空间</li>
+          <li><strong>冗余检测开销大</strong>：需要离线 profiling 或在线运行额外的相似度计算模型，不适合实时流</li>
+          <li><strong>流内容自适应性差</strong>：静态规则（每 N 帧重算）无法适应动态场景变化</li>
+        </ul>
+      </p>
+      <p><strong>关键洞察</strong>：视频编解码器（H.264/H.265）在压缩过程中已经计算了运动向量（Motion Vectors）和残差（Residuals），这些信号精确量化了帧间差异——完全可以作为"免费"的冗余检测信号直接使用！</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>编解码器信号双级利用</strong>：</p>
+      <ul>
+        <li><strong>ViT 阶段优化</strong>：
+          <ul>
+            <li>利用运动向量识别静态区域（运动向量近零）的 patch，跳过这些 patch 的 ViT 重新编码</li>
+            <li>残差信号幅值小的区域直接复用上一帧的 ViT 特征，零额外计算</li>
+          </ul>
+        </li>
+        <li><strong>LLM 阶段优化</strong>：
+          <ul>
+            <li>基于编解码器宏块运动统计估计帧级冗余度，对高冗余帧跳过 LLM 处理，复用上帧输出</li>
+            <li>对关键帧（场景切换、大运动）触发完整 LLM 推理</li>
+          </ul>
+        </li>
+        <li><strong>自适应阈值</strong>：运动向量幅值和残差能量的动态阈值自动适应不同视频内容（运动激烈 vs 静态场景）</li>
+        <li><strong>零额外开销</strong>：编解码器信号在解码阶段天然产生，无需任何额外模型或计算</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li>视频流 QA 任务：端到端吞吐量提升 2.4-3.1x（不同视频内容），精度下降 &lt;1%</li>
+        <li>ViT 阶段：平均跳过 55% 的 patch 重编码，对监控类静态背景视频达 72%</li>
+        <li>LLM 阶段：平均跳过 40% 帧的 LLM 推理，动作片类视频降至 25%</li>
+        <li>与逐帧全量推理相比，GPU 内存占用降低 45%，时延 P99 降低 60%</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>开创性地将视频编解码器信号用作 VLM 推理冗余检测的零成本信号源</li>
+        <li>首个端到端同时优化 ViT 和 LLM 两阶段的视频流 VLM 服务框架</li>
+        <li>完全在线、自适应，无需离线 profiling 或训练，直接部署于任意视频流场景</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>依赖编码视频格式（H.264/H.265），对原始帧（RAW）或 JPEG 序列不适用</li>
+        <li>编解码器信号粒度（宏块级）较粗，可能漏检局部细粒度变化</li>
+        <li>对快速场景切换（频繁关键帧）的视频加速效果有限</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

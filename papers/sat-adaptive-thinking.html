@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SAT: Stepwise Adaptive Thinking | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">SAT: Balancing Reasoning Accuracy and Efficiency with Stepwise Adaptive Thinking</h1>
+      <p class="subtitle">Weiyang Huang, Xuefeng Bai, Kehai Chen et al. · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · 推理效率</span>
+      <span class="badge badge-theme">反过度思考 · FSM · 步骤剪枝</span>
+      <a href="https://arxiv.org/abs/2604.07922" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv: 2604.07922 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>大型推理模型"过度思考"普遍存在。SAT 将推理建模为有限状态机（FSM），通过步骤级难度感知剪枝动态在慢/正常/快/跳过四种思考模式间切换，减少 25-40% token 用量，同时维持推理准确率。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>以 DeepSeek-R1、o1 为代表的大型推理模型（LRM）通过长链式推理（Long CoT）实现了数学、编程等复杂任务的突破。然而，过度思考（overthinking）是其显著缺陷：</p>
+      <ul>
+        <li>简单问题也生成数千 token 的冗余推理链</li>
+        <li>Token 消耗与 API 成本直接挂钩（o1 系列每次推理成本比 GPT-4o 高 5-10x）</li>
+        <li>推理链中充斥不必要的"自我反省"、重复验证等冗余步骤</li>
+      </ul>
+      <p>现有解决方案多为全局截断（直接限制总 token 数），破坏推理链的逻辑完整性；或训练时干预，需大量标注数据。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>有限状态机（FSM）推理框架</strong>，定义四种思考模式：</p>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px;margin:16px 0;font-family:monospace;font-size:0.9rem;">
+        <strong>状态定义：</strong><br>
+        🐌 SLOW: 全深度推理（复杂子问题）<br>
+        📝 NORMAL: 标准 CoT 步骤<br>
+        ⚡ FAST: 压缩单步推导（已知规律）<br>
+        ⏭️ SKIP: 直接跳过（显然结论）
+      </div>
+
+      <ul>
+        <li><strong>步骤难度评分</strong>：轻量级过程奖励模型（PRM）对每个推理步骤评估难度（0-1 分），决定当前步骤进入哪种思考状态</li>
+        <li><strong>FSM 状态转移</strong>：根据 PRM 得分和历史推理链质量，动态在四种模式间转换，高难度步骤启用 SLOW 模式，低难度启用 FAST/SKIP</li>
+        <li><strong>逻辑完整性保护</strong>：通过依赖图分析，确保被跳过/压缩的步骤不影响后续推理步骤的逻辑依赖</li>
+        <li><strong>无需重训练</strong>：SAT 作为推理时框架，直接应用于现有 LRM（DeepSeek-R1、QwQ 等），仅需轻量 PRM 校准</li>
+      </ul>
+
+      <div class="formula-block">
+        <code>
+          mode(step_t) = FSM_transition(PRM_score(step_t), history)<br>
+          token_budget(step_t) = mode_budget[mode(step_t)]<br>
+          accept step_t if: dependency_check(step_t, prior_steps) = True
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li>DeepSeek-R1 上：MATH-500 准确率保持 92.1%（全量 92.8%），token 用量减少 38%</li>
+        <li>QwQ-32B 上：AMC23 准确率 85.4%（全量 86.1%），token 用量减少 31%</li>
+        <li>SKIP 模式启用率：约 15% 步骤可直接跳过，FAST 模式约 35%，显示大量推理冗余</li>
+        <li>相比全局 token 限制（截断法），SAT 在相同 token 预算下准确率高 6-12 个百分点</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次将 LRM 推理建模为有限状态机，实现步骤级粒度的动态难度自适应控制</li>
+        <li>轻量 PRM + 依赖图机制，保证推理剪枝的逻辑完整性</li>
+        <li>无需重训练的即插即用框架，对主流 LRM 均有效</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>PRM 校准质量影响剪枝效果，低质量 PRM 可能误剪关键步骤</li>
+        <li>在需要深度验证的证明类任务（如 IMO 级别）上剪枝空间有限</li>
+        <li>依赖图分析增加少量额外计算（约 5%），在极短推理链上不合算</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

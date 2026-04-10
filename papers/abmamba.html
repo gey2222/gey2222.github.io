@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABMamba: Aligned Hierarchical Bidirectional Scan Mamba | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">ABMamba: Multimodal LLM with Aligned Hierarchical Bidirectional Scan for Efficient Video Captioning</h1>
+      <p class="subtitle">Daichi Yashima, Shuhei Kurita, Yusuke Oda et al. · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-video">视频描述 · Mamba</span>
+      <span class="badge badge-theme">线性复杂度 · 双向扫描 · MLLM</span>
+      <a href="https://arxiv.org/abs/2604.08050" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv: 2604.08050 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>Transformer 的二次复杂度让视频描述生成代价极高。ABMamba 提出对齐分层双向扫描的 Mamba 架构，以线性复杂度处理视频序列，同时通过双向扫描捕获时序双向依赖，在视频描述基准上达到 Transformer 相当性能。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>视频描述（Video Captioning）是多模态 LLM 的核心任务，但视频的时序依赖和长序列特性带来巨大挑战：</p>
+      <ul>
+        <li>Transformer 注意力复杂度为 O(T²)，30 秒视频（~7500 tokens）的推理代价是 5 秒视频的 225 倍</li>
+        <li>Mamba 等状态空间模型（SSM）具有线性复杂度，但传统 Mamba 是单向扫描，难以建模视频的双向时序关系（如理解动作需要前后帧上下文）</li>
+        <li>将 Mamba 扩展到多模态 LLM 还面临视觉-语言对齐问题</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>对齐分层双向扫描 Mamba（ABMamba）</strong>：</p>
+      <ul>
+        <li><strong>双向扫描机制</strong>：
+          <ul>
+            <li>同时维护前向和后向两个独立 SSM 状态，并行处理视频序列</li>
+            <li>在每个时间步将前向/后向隐状态门控融合，捕获完整双向时序上下文</li>
+            <li>复杂度仍为 O(T)，比 Transformer 双向扩展高效得多</li>
+          </ul>
+        </li>
+        <li><strong>分层特征提取</strong>：
+          <ul>
+            <li>多尺度时间分辨率处理：细粒度层（逐帧）+ 粗粒度层（片段级），分别捕获短时动作和长程叙事结构</li>
+            <li>分层特征通过跨尺度注意力对齐，融合多时间尺度信息</li>
+          </ul>
+        </li>
+        <li><strong>视觉-语言对齐</strong>：
+          <ul>
+            <li>设计专用对齐模块将视觉 Mamba 输出映射到语言模型 token 空间</li>
+            <li>通过对比学习确保视觉特征与文本描述的语义对齐</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li>MSR-VTT 视频描述：CIDEr 57.3（Transformer 基线 58.1），推理速度快 3.2x</li>
+        <li>ActivityNet Captions（长视频）：CIDEr 44.8 vs Transformer 43.9，长视频上 ABMamba 超过 Transformer</li>
+        <li>内存占用：30s 视频推理 GPU 内存降低 62%，支持在单 GPU 上处理 5 分钟视频</li>
+        <li>训练效率：相同数据下收敛速度比 Transformer 快 1.8x</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首个以线性复杂度实现双向时序建模的视频多模态 LLM</li>
+        <li>分层扫描机制有效融合逐帧细节和片段级叙事，优于单尺度方法</li>
+        <li>全开源（模型权重 + 代码 + 训练配置），推动社区在高效视频理解上的研究</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>双向 Mamba 的并行实现复杂度较高，工程实现难度大于单向版本</li>
+        <li>在需要精确全局注意力的任务（如 cross-video 检索）上，Mamba 的选择性状态更新可能丢失全局上下文</li>
+        <li>当前评估主要针对视频描述，在视频问答等任务上的泛化性有待验证</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

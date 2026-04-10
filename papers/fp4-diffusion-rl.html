@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FP4 Explore BF16 Train: Diffusion RL | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">FP4 Explore, BF16 Train: Diffusion Reinforcement Learning via Efficient Rollout Scaling</h1>
+      <p class="subtitle">Yitong Li, Junsong Chen, Shuchen Xue et al. (Song Han, Enze Xie) · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-video">扩散模型 · RL 对齐</span>
+      <span class="badge badge-theme">FP4 量化 · Rollout 扩展 · 训练效率</span>
+      <a href="https://arxiv.org/abs/2604.06916" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv: 2604.06916 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>扩散模型 RL 后训练中增大 rollout 规模能显著提升对齐效果，但对 FLUX 等 12B 模型代价极高。本文提出 FP4 rollout + BF16 训练的混合精度框架，配合量化感知分组奖励归一化，在 FLUX 上实现约 2-3x rollout 吞吐量提升，不损失对齐效果。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>RLHF/RLVR 在 LLM 对齐上取得巨大成功，近期研究（DDPO、DPOK）将强化学习引入扩散模型对齐。核心发现：增大 rollout 组规模（每个 prompt 生成更多候选图像）能显著提升对齐性能，因为更多样本提供了更稳健的奖励估计。</p>
+      <p>然而，对于大规模扩散模型（FLUX.1-12B），每次 rollout 包含 20-50 步去噪，计算成本极高：
+        <ul>
+          <li>FLUX-12B 每次 rollout 需约 30s（A100），batch size=8 时每步训练需 4 分钟</li>
+          <li>扩大 rollout 规模（如 32→128）使训练时间延长 4-8x</li>
+          <li>朴素量化（INT8 rollout）因训练-推理精度不匹配导致奖励分布偏移，梯度不稳定</li>
+        </ul>
+      </p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>FP4 Explore, BF16 Train 框架</strong>：</p>
+      <ul>
+        <li><strong>FP4 Rollout（探索阶段）</strong>：
+          <ul>
+            <li>在生成候选图像（rollout）阶段使用 FP4 量化，最大化采样吞吐量</li>
+            <li>利用 NVIDIA H100/B200 的原生 FP4 Tensor Core 加速去噪步骤</li>
+            <li>rollout 吞吐量提升约 2.5x（vs BF16）</li>
+          </ul>
+        </li>
+        <li><strong>BF16 Train（学习阶段）</strong>：
+          <ul>
+            <li>反向传播和参数更新全程用 BF16，保证数值稳定性和梯度精度</li>
+            <li>避免量化误差累积导致的训练不稳定</li>
+          </ul>
+        </li>
+        <li><strong>量化感知分组奖励归一化（QA-GRN）</strong>：
+          <ul>
+            <li>FP4 rollout 与 BF16 rollout 输出的图像质量分布存在系统性偏差</li>
+            <li>QA-GRN 对 FP4 生成的奖励值进行校准归一化，消除量化精度差异带来的奖励偏移</li>
+            <li>确保混合精度训练的策略梯度估计无偏</li>
+          </ul>
+        </li>
+      </ul>
+
+      <div class="formula-block">
+        <code>
+          r_normalized = (r_fp4 - μ_fp4) / σ_fp4 · σ_bf16 + μ_bf16<br>
+          L_RL = E[r_normalized · log π_θ(x|c)]  (BF16 gradient)
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li>FLUX.1-12B rollout 吞吐量：FP4 比 BF16 快 2.4x，比 INT8 快 1.5x</li>
+        <li>HPSv2 人类偏好评分：在相同训练时间下，FP4+QA-GRN 达到与 BF16 训练相当（差异 &lt;0.3%）</li>
+        <li>在相同计算预算下，FP4 Explore 可将 rollout 规模从 32 扩展到 128，对齐分数额外提升 2.1%</li>
+        <li>训练稳定性：QA-GRN 将朴素 FP4 训练的梯度范数方差降低 73%</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次系统研究扩散模型 RL 的 rollout 量化，揭示朴素量化导致的训练不稳定机理</li>
+        <li>提出 FP4 Explore + BF16 Train 混合精度框架，解决探索效率与训练稳定性的矛盾</li>
+        <li>QA-GRN 提供简单有效的量化偏差校正方案，可推广到其他生成模型的量化 RL</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>FP4 加速依赖 Hopper/Blackwell 架构（H100/B200），在 A100 等旧卡上无原生 FP4 支持</li>
+        <li>QA-GRN 校准需要少量 BF16 rollout 样本估计分布参数，增加一定开销</li>
+        <li>对奖励模型本身的计算瓶颈未作优化（奖励评估仍用全精度）</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

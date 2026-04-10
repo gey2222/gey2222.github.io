@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alloc-MoE: Budget-Aware Expert Activation | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">Alloc-MoE: Budget-Aware Expert Activation Allocation for Efficient MoE Inference</h1>
+      <p class="subtitle">Baihui Liu, Kaiyuan Tian, Wei Wang · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · MoE</span>
+      <span class="badge badge-theme">推理效率 · 专家激活预算</span>
+      <a href="https://arxiv.org/abs/2604.08133" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv: 2604.08133 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>引入激活预算概念约束 MoE 推理，动态分配各层各 token 的专家激活数量，在总预算内优先激活关键专家，相比固定稀疏率方案在相同延迟预算下显著提升模型性能。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>Mixture-of-Experts（MoE）因其稀疏激活机制已成为扩展大模型的主流架构（Mixtral、DeepSeek-V3、Qwen MoE 等）。然而，在资源受限部署场景（边缘设备、成本敏感服务），即使稀疏激活仍有大量专家被触发，造成严重推理延迟瓶颈。</p>
+      <p>现有减少专家激活的方法（Top-K 裁剪、专家跳过）采用固定稀疏率，在降低延迟的同时导致模型性能严重退化——不同层、不同 token 的重要性差异被忽略，"一刀切"的稀疏率无法实现帕累托最优。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>激活预算（Activation Budget）</strong>：将整次推理允许激活的专家总数作为全局约束，在此约束内动态分配各层各 token 的激活数量。</p>
+
+      <div class="formula-block">
+        <code>
+          minimize Loss(x; θ, A)<br>
+          subject to: Σ<sub>l,t</sub> A<sub>l,t</sub> ≤ B  (总激活预算约束)
+        </code>
+      </div>
+
+      <ul>
+        <li><strong>层级重要性感知</strong>：通过轻量级重要性评分网络预测每层对当前 token 的贡献度，高重要性层分配更多激活</li>
+        <li><strong>Token 自适应分配</strong>：难度高（熵值高）的 token 分配更多专家激活；简单 token 减少激活节省预算</li>
+        <li><strong>动态路由修正</strong>：在原有 Top-K 路由基础上，根据预算剩余量动态调整各层激活数（Top-K 可变）</li>
+        <li><strong>零额外推理开销</strong>：重要性评分与路由并行计算，不在关键路径上增加延迟</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li>在 Mixtral-8x7B 上，相同激活预算（等同 50% 专家激活减少）下，Alloc-MoE 比固定 Top-K 裁剪性能高 2.3 个百分点（平均多任务基准）</li>
+        <li>在 DeepSeek-MoE 上，延迟减少 30% 时性能降级比固定方案少 60%</li>
+        <li>动态分配后，关键推理层自动获得更多激活预算，与人工层重要性分析高度吻合</li>
+        <li>Token 级分配分析显示：难 token 平均获得 1.4x 更多激活，简单 token 降至 0.6x</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>提出激活预算约束框架，将 MoE 推理效率优化转化为有约束最优化问题</li>
+        <li>设计层级+Token 双维度动态分配机制，突破固定稀疏率的性能瓶颈</li>
+        <li>无需重训练，即插即用于现有 MoE 模型推理框架</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>重要性评分网络引入少量额外参数，需要轻量校准过程</li>
+        <li>在批处理（batched）推理场景下，不同 token 的动态激活数可能带来实现复杂度</li>
+        <li>极端预算压缩（&lt;30% 激活）下性能仍有明显下降</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

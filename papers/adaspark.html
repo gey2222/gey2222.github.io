@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AdaSpark: Adaptive Sparsity for Long Video | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">AdaSpark: Adaptive Sparsity for Efficient Long-Video Understanding</h1>
+      <p class="subtitle">Handong Li, Zikang Liu, Longteng Guo et al. · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-video">视频理解 · 自适应稀疏</span>
+      <span class="badge badge-theme">Video-LLM · 长视频 · 时空立方体</span>
+      <a href="https://arxiv.org/abs/2604.08077" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv: 2604.08077 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>长视频 Video-LLM 处理代价极高。AdaSpark 将视频划分为 3D 时空立方体，通过自适应立方体选择注意力（AdaS-Attn）和可逆信息聚合双组件，动态决定各立方体计算强度，FLOPs 减少 40%+ 同时保持精度。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>视频 LLM（Video-LLM）在长视频理解上面临严峻的计算挑战：1 分钟视频（24fps）涉及 1440 帧，即使每帧 256 个 visual token 也有近 370k token，对 attention 复杂度和 GPU 内存都是极大压力。</p>
+      <p>现有效率方法的缺陷：
+        <ul>
+          <li><strong>不可逆信息丢弃</strong>（如帧采样、token 压缩）：一旦丢弃就无法恢复，细粒度感知（快速动作、字幕等）受损</li>
+          <li><strong>固定稀疏模式</strong>（如每 N 帧取 1 帧）：无法适应视频内容的动态时序结构，忽视关键片段</li>
+        </ul>
+      </p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>3D 时空立方体划分</strong>：将视频在时间（T）、高度（H）、宽度（W）三个维度划分为非重叠的立方体（如 4×8×8 的时空块），每个立方体是计算分配的基本单元。</p>
+
+      <p><strong>双组件协同设计</strong>：</p>
+      <ul>
+        <li><strong>AdaS-Attn（自适应立方体选择注意力）</strong>：
+          <ul>
+            <li>用轻量门控网络评估每个立方体与当前 query 的相关度分数</li>
+            <li>高相关立方体：分配完整计算（全分辨率 attention）</li>
+            <li>低相关立方体：降采样后计算（1/4 分辨率）或直接跳过</li>
+            <li>计算强度动态可变，而非二元"保留/丢弃"</li>
+          </ul>
+        </li>
+        <li><strong>可逆信息聚合</strong>：
+          <ul>
+            <li>对被降采样处理的立方体，保留其高层语义摘要而非永久丢弃原始信息</li>
+            <li>当后续 query 需要时，可恢复（软查询）被降采样立方体的详细信息</li>
+            <li>关键信息不被永久丢失</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li>EgoSchema（长视频问答）：准确率 72.4% vs 全量 73.1%，FLOPs 减少 43%</li>
+        <li>Video-MME（综合视频理解）：平均分 65.8 vs 全量 66.3，推理延迟降低 38%</li>
+        <li>MLVU（超长视频）：精度 63.2%（全量 63.8%），支持 1h+ 视频直接推理</li>
+        <li>动作密集片段检测：AdaS-Attn 自动为动作区域分配更多计算，可视化验证与人类直觉一致</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>提出 3D 时空立方体作为统一的自适应计算分配单元，兼顾时间和空间维度</li>
+        <li>AdaS-Attn 实现连续强度自适应（而非二元选择），保证关键区域细粒度感知</li>
+        <li>可逆聚合机制消除不可逆信息丢失，在效率和完整性间达到新 Pareto 前沿</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>门控网络引入少量额外参数和训练开销</li>
+        <li>可逆恢复机制增加内存占用（保留摘要信息），极端内存受限场景下效益降低</li>
+        <li>立方体划分超参数对性能有影响，需要针对不同视频类型调整</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

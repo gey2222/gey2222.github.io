@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blink: CPU-Free LLM Inference | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">Blink: CPU-Free LLM Inference by Delegating the Serving Stack to GPU and SmartNIC</h1>
+      <p class="subtitle">Mohammad Siavashi, Mariano Scazzariello, Gerald Q. Maguire · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · 系统</span>
+      <span class="badge badge-theme">CPU-Free · SmartNIC · 服务架构</span>
+      <a href="https://arxiv.org/abs/2604.07609" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv: 2604.07609 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>将 CPU 从 LLM 推理服务的关键路径上完全移除，把调度和 token 级控制委托给 GPU 和 SmartNIC。消除 CPU 干扰导致的延迟抖动，使 LLM 服务与其他负载共置成为可能，显著提升数据中心资源利用率。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>LLM 推理正在成为核心数据中心服务。当前服务框架（vLLM、TensorRT-LLM 等）将 CPU 置于稳态推理关键路径：每个 token 生成都需要 CPU 参与调度、内存管理和 token 级控制。</p>
+      <p>这带来三大问题：
+        <ol>
+          <li><strong>CPU 干扰敏感</strong>：任何 CPU 竞争（OS 调度、其他进程）直接传导为 LLM 延迟抖动（P99 延迟可高出均值 3-5x）</li>
+          <li><strong>共置困难</strong>：运营商被迫为 LLM 服务预留专用 CPU，无法与其他服务共置，CPU 资源大量浪费</li>
+          <li><strong>扩展瓶颈</strong>：高并发请求时 CPU 调度成为吞吐量瓶颈</li>
+        </ol>
+      </p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>Blink 架构</strong>将服务栈完全卸载到 GPU 和 SmartNIC：</p>
+      <ul>
+        <li><strong>GPU 端请求调度</strong>：将批处理调度逻辑迁移至 GPU kernel，利用 GPU 的高并发性能处理 token 级控制，无需 CPU 参与每次 forward pass</li>
+        <li><strong>SmartNIC 网络处理</strong>：将网络 I/O、请求队列管理委托给 SmartNIC（可编程网卡），SmartNIC 直接与 GPU 通信，绕过 CPU 路径</li>
+        <li><strong>GPU 直接内存管理</strong>：KV Cache 的分配/释放由 GPU 自主管理（利用 CUDA 统一内存或自定义分配器），消除 CPU 内存管理开销</li>
+        <li><strong>异步 CPU 旁路</strong>：CPU 仅处理异常/配置等稀有非关键路径操作，完全不在稳态推理链路上</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li>在高负载下（100+ 并发请求），P99 延迟比 vLLM 降低 40%，延迟抖动（P99/P50）从 3.8x 降至 1.4x</li>
+        <li>与其他服务共置时（CPU 争用 50%），Blink 延迟基本不受影响，而 vLLM 降级 60%+</li>
+        <li>CPU 核心占用降低 85%，使同一物理机可额外共置 2-3 个其他服务</li>
+        <li>端到端吞吐量（tokens/s/GPU）提升约 25%（减少 CPU 等待和同步开销）</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首个完整移除 CPU 的 LLM 推理服务架构，实现端到端 CPU-Free 稳态推理路径</li>
+        <li>设计 GPU 端请求调度器和 SmartNIC 端网络处理协议，两者协同实现零 CPU 依赖</li>
+        <li>解决 LLM 服务共置难题，具有显著的数据中心经济价值</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>依赖特定 SmartNIC 硬件（BlueField 等），通用性受限</li>
+        <li>GPU 端调度逻辑实现复杂，对 CUDA 编程要求较高</li>
+        <li>在低并发（&lt;10 请求）场景下优势不明显，适合高吞吐生产环境</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

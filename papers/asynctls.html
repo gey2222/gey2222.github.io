@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AsyncTLS: Asynchronous Two-level Sparse Attention | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">AsyncTLS: Efficient Generative LLM Inference with Asynchronous Two-level Sparse Attention</h1>
+      <p class="subtitle">Yuxuan Hu, Jianchao Tan, Jiaqi Zhang et al. · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · 稀疏注意力</span>
+      <span class="badge badge-theme">长上下文 · 异步卸载 · KV Cache</span>
+      <a href="https://arxiv.org/abs/2604.07815" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv: 2604.07815 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>分层稀疏注意力（粗粒度块过滤 + 细粒度 token 选择）+ 异步卸载引擎（计算与传输重叠），在 Qwen3、GLM-4.7-Flash 上同时支持 GQA 和 MLA 架构，精度接近全注意力，内存和计算显著降低。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>长上下文 LLM 推理面临双重挑战：</p>
+      <ol>
+        <li><strong>二次方注意力复杂度</strong>：128k 上下文时注意力计算约占总推理时间 60%+</li>
+        <li><strong>KV Cache 内存爆炸</strong>：单次 128k 推理的 KV Cache 可达数十 GB</li>
+      </ol>
+      <p>现有解法的 trade-off：
+        <ul>
+          <li><strong>Token 级稀疏注意力</strong>：精度高，但为每个 query 逐 token 建索引开销大（额外 10-20% 延迟）</li>
+          <li><strong>块级稀疏注意力</strong>：索引简单高效，但块内粒度粗，重要 token 可能因所在块整体不重要而被丢弃</li>
+        </ul>
+        AsyncTLS 融合两者优势，并通过异步卸载解决内存问题。
+      </p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>两级分层注意力（Two-Level Sparse Attention）</strong>：</p>
+      <ul>
+        <li><strong>第一级（块过滤）</strong>：用 query 向量对 KV 块进行粗粒度相关性打分，快速过滤掉大量无关块（保留 top-20% 块）</li>
+        <li><strong>第二级（Token 精选）</strong>：在保留块内用精确注意力分数做细粒度 token 选择，只对高得分 token 计算完整注意力</li>
+      </ul>
+
+      <p><strong>异步卸载引擎（Asynchronous Offloading）</strong>：</p>
+      <ul>
+        <li>利用时间局部性（temporal locality）预测下次需要的 KV 块，提前异步从 CPU 预取到 GPU</li>
+        <li>KV 传输与 GPU 计算完全重叠，卸载延迟几乎为零</li>
+        <li>支持 GQA（分组查询注意力）和 MLA（多头潜在注意力）等高效注意力变体</li>
+      </ul>
+
+      <div class="formula-block">
+        <code>
+          Stage 1: score_block(q, K_block) = max_t softmax(q·K_block[t])<br>
+          Stage 2: sparse_attn(q, top_tokens) = softmax(q·K_selected) · V_selected<br>
+          Async: prefetch(next_blocks) || compute(current_blocks)
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li>Qwen3-72B 128k 上下文：内存占用降低 55%，注意力计算加速 3.2x，LongBench 精度相比全注意力下降 &lt;1%</li>
+        <li>GLM-4.7-Flash MLA 架构：同等精度下推理延迟降低 45%，支持 2x 更长上下文窗口</li>
+        <li>与纯块级方法相比，AsyncTLS 在 Multi-Doc QA 上精度提升 4.5 个百分点</li>
+        <li>异步预取将 CPU→GPU 传输延迟占比从 20% 降至 &lt;3%</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>创新性地将块过滤与 token 精选融合为两级稀疏注意力，突破精度-效率 trade-off</li>
+        <li>设计基于时间局部性的异步 KV 预取引擎，实现计算-传输完全重叠</li>
+        <li>首次在 MLA 架构上验证分层稀疏注意力的有效性，覆盖主流 LLM 注意力变体</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>两级过滤引入额外内存访问，在极低上下文长度（&lt;8k）下开销不合算</li>
+        <li>时间局部性预取对访问模式规律性有一定假设，对高度随机访问场景预取效果下降</li>
+        <li>在超长上下文（&gt;1M tokens）下需要配合磁盘级卸载，架构需进一步扩展</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

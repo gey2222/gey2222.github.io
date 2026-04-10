@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KV Cache Offloading for Context-Intensive Tasks | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">KV Cache Offloading for Context-Intensive Tasks</h1>
+      <p class="subtitle">Andrey Bocharnikov, Ivan Ermakov, Denis Kuznedelev · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · KV Cache</span>
+      <span class="badge badge-theme">长上下文 · 卸载优化</span>
+      <a href="https://arxiv.org/abs/2604.08426" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv: 2604.08426 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>系统研究 KV Cache 卸载在上下文密集型任务（需大量从上下文提取信息）中的表现，指出先前研究在此场景下的评估缺口，并给出高提取率场景的优化策略，在降低 GPU 内存的同时保持精度。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>随着 LLM 长上下文需求激增，KV Cache 成为延迟和内存的双重瓶颈。KV Cache 卸载（offloading to CPU/NVMe）已被证明是有效的内存压缩手段。然而，先前评估工作主要关注无需大量提取信息的任务（如简单问答），对<strong>上下文密集型任务</strong>（如多文档 QA、长文本摘要，需从大量上下文中提取大量信息）缺乏深入分析。这类任务的访问模式与简单任务差异显著，可能导致卸载策略选择失当。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p>本文系统评估 KV Cache 卸载策略在上下文密集型任务下的表现差异：</p>
+      <ul>
+        <li><strong>任务分类</strong>：区分低提取率任务（简单 QA）与高提取率任务（多跳 QA、摘要），分析两类任务的 KV 访问模式差异</li>
+        <li><strong>卸载策略分析</strong>：对比 CPU offload、NVMe offload、分层混合卸载在不同任务上的延迟-内存 Pareto 曲线</li>
+        <li><strong>优化策略</strong>：针对高提取率场景提出预取（prefetching）和访问模式预测机制，减少卸载带来的额外延迟</li>
+        <li><strong>动态平衡</strong>：根据任务类型动态调整 GPU/CPU 内存分配比例，避免上下文密集型任务下精度大幅下降</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li>在文档摘要、多跳 QA 等上下文密集型基准上，合理的卸载策略可将 GPU 内存占用降低 50%+ 同时保持精度</li>
+        <li>相比低提取率任务，高提取率任务对卸载策略更敏感，不当卸载可导致精度下降 10-20%</li>
+        <li>预取机制将上下文密集型任务的卸载延迟开销从 30%+ 降至 5% 以内</li>
+        <li>给出不同硬件配置（CPU 带宽 / NVMe 速度）下的最优策略选择指南</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次系统揭示 KV Cache 卸载在上下文密集型任务下的评估缺口</li>
+        <li>分析高提取率场景的 KV 访问模式特征，提出针对性优化</li>
+        <li>提供跨硬件配置的卸载策略最优选择指南，具有强实践价值</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>主要关注系统层面分析，未提出新型卸载算法</li>
+        <li>评估硬件配置有限，结论在极端硬件（极低 CPU 带宽）下可能不适用</li>
+        <li>对超长上下文（>1M tokens）场景的研究有待扩展</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>
