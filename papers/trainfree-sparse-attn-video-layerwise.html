@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Training-Free Sparse Attention for Video DiT | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">Training-Free Sparse Attention for Fast Video Generation via Offline Layer-Wise Sparsity Profiling and Online Bidirectional Co-Clustering</h1>
+      <p class="subtitle">Jiayi Luo, Jiayu Chen, Jiankun Wang, Zhibo Chen, Jianxin Li et al. · 2026-03</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-video">视频生成 · 稀疏注意力 · DiT</span>
+      <span class="badge badge-theme">层级稀疏率 · 双向协同聚类 · 训练无关</span>
+      <a href="https://arxiv.org/abs/2503.14211" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2503.14211 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>视频 DiT 不同层的注意力稀疏特性差异极大，统一稀疏率导致高质量层被过度压缩。本文提出离线逐层最优稀疏率分析 + 在线双向协同聚类，在 Wan2.1 上实现 1.9x 推理加速，CLIP 相似度和时间一致性与全注意力无显著差距，无需任何训练。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>视频 DiT 稀疏注意力的关键洞察：</p>
+      <ul>
+        <li><strong>层级差异</strong>：浅层注意力头倾向局部/纹理信息（高稀疏性），深层注意力头倾向全局语义（低稀疏性）</li>
+        <li><strong>现有方案问题</strong>：统一稀疏率（如全局 50%）会错误压缩深层关键注意力，导致语义失真</li>
+        <li><strong>双向聚类需求</strong>：单向聚类（只聚 Key 或只聚 Query）无法捕捉时空 token 的双边相似结构</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>两阶段方案</strong>：</p>
+      <p><em>阶段一：离线层级稀疏率 Profile</em></p>
+      <ul>
+        <li>在代表性视频样本上运行全注意力，记录每层注意力分布特征（熵、集中度）</li>
+        <li>用遗传算法搜索每层最优稀疏率，约束总体质量不低于阈值</li>
+        <li>Profile 结果存储为模型配置，推理时直接加载</li>
+      </ul>
+      <p><em>阶段二：在线双向协同聚类</em></p>
+      <div class="formula-block">
+        <code>
+          双向协同聚类（每层推理时执行）：<br>
+          1. Q-聚类：K-Means(Q) → Q_labels（Q token 分组）<br>
+          2. K-聚类：K-Means(K) → K_labels（K token 分组）<br>
+          3. 协同矩阵：C[i,j] = mean_attn(Q_group_i, K_group_j)<br>
+          4. 按层稀疏率 s_l，保留 C 中 top-(1-s_l) 的 (Q_group, K_group) 对<br>
+          5. 只计算保留对内的精确注意力<br>
+          <br>
+          时空结构感知：将帧内 token 和跨帧 token 分别聚类<br>
+          保证帧内局部注意力和跨帧时序注意力分别优化
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>推理速度</strong>：Wan2.1（480p 81 帧）推理加速 1.9x，HunyuanVideo 加速 1.7x</li>
+        <li><strong>生成质量</strong>：VBench 总分与全注意力差距 &lt;0.5%，CLIP 文本-视频相似度差距 &lt;0.3%</li>
+        <li><strong>时间一致性</strong>：帧间一致性指标相比统一稀疏基线提升 3.8%</li>
+        <li><strong>Profile 开销</strong>：离线 Profile 仅需 30 分钟（在 8 个 A100 上），一次 Profile 适用所有输入</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次系统分析视频 DiT 各层注意力稀疏特性的差异性</li>
+        <li>离线层级最优稀疏率搜索，一次 Profile 永久使用</li>
+        <li>时空感知双向协同聚类，保持帧内和帧间注意力质量</li>
+        <li>在多个主流视频生成模型上验证泛化性</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>离线 Profile 针对特定视频内容分布，跨域泛化（如动画 vs 真实感）有待验证</li>
+        <li>双向聚类增加在线开销，加速比 AdaCluster 等单向方法低</li>
+        <li>不同分辨率/帧率需要重新 Profile，配置管理复杂</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

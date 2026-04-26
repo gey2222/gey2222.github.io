@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fast-dVLM: Efficient Block-Diffusion VLM | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">Fast-dVLM: Efficient Block-Diffusion VLM via Direct Conversion from Autoregressive VLM</h1>
+      <p class="subtitle">Chengyue Wu, Shiyi Lan, Yonggan Fu, Song Han, Ligeng Zhu, Enze Xie et al. · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-video">VLM · 块扩散解码 · 推理加速</span>
+      <span class="badge badge-theme">AR→扩散转换 · 并行生成 · 边缘部署</span>
+      <a href="https://arxiv.org/abs/2504.06256" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.06256 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>VLM 自回归解码在 batch_size=1（边缘设备）场景下推理极慢，块扩散（Block Diffusion）可并行生成多 token 但从头训练代价高。Fast-dVLM 提出 AR→BD 直接转换方法：无需从头训练，直接将预训练 AR-VLM 转换为 Block-Diffusion VLM，推理速度提升 3-5x，多模态 benchmark 性能损失 &lt;2%。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>VLM 边缘推理的矛盾：</p>
+      <ul>
+        <li><strong>自回归瓶颈</strong>：AR 解码 batch_size=1 时 GPU 利用率 &lt;5%（memory-bound），每 token 串行等待</li>
+        <li><strong>边缘部署需求</strong>：机器人、无人机、边缘 IoT 设备需要本地高速 VLM，无法依赖云端</li>
+        <li><strong>块扩散潜力</strong>：块扩散解码每步并行生成 k token，理论加速 k 倍，但需要从头预训练</li>
+        <li><strong>直接转换挑战</strong>：AR 模型因果掩码与 BD 双向注意力在架构上不相容，直接替换质量崩溃</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>AR → Block Diffusion 转换三步骤</strong>：</p>
+      <ul>
+        <li><strong>Step 1：掩码适配</strong>：将因果掩码替换为块内双向掩码 + 块间因果掩码，保留跨块自回归结构</li>
+        <li><strong>Step 2：噪声注入对齐</strong>：在转换微调时对块内 token 加入可学习噪声，让模型学会去噪而非条件生成</li>
+        <li><strong>Step 3：解码头调整</strong>：在原 AR 语言模型头上添加轻量去噪网络，预测块内 token 的联合分布</li>
+      </ul>
+      <div class="formula-block">
+        <code>
+          块扩散解码流程：<br>
+          AR 解码（原始）：y_1 → y_2 → ... → y_T（串行）<br>
+          <br>
+          BD 解码（Fast-dVLM）：<br>
+          [y_1...y_k] → [y_{k+1}...y_{2k}] → ...（块间串行）<br>
+          块内并行：一次前向同时生成 k 个 token<br>
+          <br>
+          转换微调目标：<br>
+          L_BD = E_{x,ε}[||denoise_head(noisy_block, context) - block||²]<br>
+          微调数据量 &lt;1% 原始预训练数据
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>推理加速</strong>：批大小=1 时比 AR-VLM 快 3.1x（k=4）至 4.8x（k=8）</li>
+        <li><strong>质量保持</strong>：MMBench 从 78.3% → 77.1%（-1.6%），SeedBench 从 65.4% → 64.2%（-1.8%）</li>
+        <li><strong>转换效率</strong>：微调仅需 1B token（原预训练数据 &lt;1%），A100 单机约 12 小时</li>
+        <li><strong>边缘部署</strong>：Jetson Orin NX（16GB）上实现 15 tokens/s，比原 AR 快 4.2x，达到实时交互水平</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首个从预训练 AR-VLM 直接转换为 Block-Diffusion VLM 的方法</li>
+        <li>掩码适配 + 噪声注入的三步转换流程，微调成本极低</li>
+        <li>在边缘设备（Jetson Orin）上实现实时 VLM 推理</li>
+        <li>理论分析 AR 与 BD 的等价条件，指导转换设计</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>块大小 k 越大加速越高但质量损失越大，k &gt;8 时质量显著下降</li>
+        <li>块内 token 独立性假设在长依赖场景（代码生成、数学推导）下质量损失增大</li>
+        <li>转换微调仍需要一定计算资源，限制了小团队快速部署</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

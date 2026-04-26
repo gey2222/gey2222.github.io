@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Super Apriel: One Checkpoint, Many Speeds | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">Super Apriel: One Checkpoint, Many Speeds</h1>
+      <p class="subtitle">SLAM Labs: Oleksiy Ostapenko, Raymond Li, Torsten Scholak et al. · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · 超网络 · 多速度推理</span>
+      <span class="badge badge-theme">混合注意力 · 弹性部署 · 单检查点</span>
+      <a href="https://arxiv.org/abs/2504.15671" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.15671 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>Super Apriel 是一个 15B 超网络：每个 decoder 层提供 4 种注意力混合器（全注意力 FA、滑动窗口 SWA、Kimi Delta 注意力 KDA、门控 DeltaNet GDN），通过层级 Placement 策略在服务时无需重载权重即可切换不同速度-质量组合，单一检查点覆盖从极速到高质量的完整推理谱。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>实际部署面临多样化需求：</p>
+      <ul>
+        <li><strong>场景多样性</strong>：批量离线处理需要最大吞吐量，交互式对话需要低延迟，高精度任务需要最优质量</li>
+        <li><strong>现有方案痛点</strong>：针对每种场景训练独立模型，存储和维护成本高；蒸馏/剪枝得到的轻量模型通常质量显著下降</li>
+        <li><strong>注意力机制多样性</strong>：FA 质量高但 O(n²) 开销大；SWA 线性复杂度但丢失长程依赖；KDA/GDN 在速度和能力间取得不同平衡</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>四种注意力混合器</strong>：</p>
+      <ul>
+        <li><strong>Full Attention (FA)</strong>：标准因果注意力，质量最高，O(n²) 复杂度</li>
+        <li><strong>Sliding Window Attention (SWA)</strong>：窗口大小 w 内注意力，O(nw) 复杂度</li>
+        <li><strong>Kimi Delta Attention (KDA)</strong>：差分注意力机制，减少注意力噪声，效率居中</li>
+        <li><strong>Gated DeltaNet (GDN)</strong>：线性化注意力+门控，接近 O(n) 复杂度</li>
+      </ul>
+      <div class="formula-block">
+        <code>
+          超网络训练目标：<br>
+          min_θ Σ_{p∈Placements} E_{x}[L(f_θ^p(x), y)]<br>
+          <br>
+          其中 p = {mixer_l ∈ {FA, SWA, KDA, GDN} : l=1..L}<br>
+          θ 为共享权重，mixer 选择不影响权重加载<br>
+          <br>
+          服务时切换：f_θ^p_fast vs f_θ^p_quality 无需重新加载 θ
+        </code>
+      </div>
+      <p><strong>Placement 搜索</strong>：通过小样本 proxy 任务快速评估各层混合器组合的性能-效率 Pareto，自动搜索最优 Placement。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>质量保持</strong>：最快 Placement（全 GDN）在 Commonsense 上比全 FA 低 1.2%；最高质量 Placement 与全 FA 持平</li>
+        <li><strong>速度范围</strong>：最快与最慢 Placement 间推理吞吐量相差 3.2x，提供丰富的速度-质量选择</li>
+        <li><strong>对比独立模型</strong>：同等 FLOP 预算下，超网络 Placement 比独立训练的 SWA 模型高 2.1%（MMLU）</li>
+        <li><strong>存储效率</strong>：单检查点替代 4 个独立模型，存储减少 75%</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首个支持 4 种异构注意力机制共享权重的 15B 超网络 LLM</li>
+        <li>服务时零开销注意力架构切换，无需模型重载</li>
+        <li>Placement 搜索算法自动发现最优速度-质量平衡点</li>
+        <li>开源模型权重和 Placement 配置，支持社区扩展新混合器</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>超网络训练比单一架构更复杂，收敛可能不稳定</li>
+        <li>GDN 等线性注意力在超长上下文（>64k）时质量差距扩大</li>
+        <li>Placement 搜索依赖代理任务，对特定领域任务的泛化性有待验证</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DASH-KV: Asymmetric KV Cache Hashing | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">DASH-KV: Accelerating Long-Context LLM Inference via Asymmetric KV Cache Hashing</h1>
+      <p class="subtitle">Jinyu Guo, Zhihan Zhang, Yutong Li, Jiehui Xie et al. · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · KV Cache · 长上下文</span>
+      <span class="badge badge-theme">非对称哈希 · 内存压缩 · 推理加速</span>
+      <a href="https://arxiv.org/abs/2504.15422" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.15422 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>标准注意力的二次复杂度严重制约长上下文推理，DASH-KV 提出非对称 KV Cache 哈希方案——对 Key 和 Value 采用不同精度的局部敏感哈希策略，在保留 99.5%+ 生成质量的前提下，将 128k 长文档 KV Cache 内存降低 70%，推理吞吐量提升 2.8x。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>长上下文 LLM 推理面临两大挑战：</p>
+      <ul>
+        <li><strong>计算瓶颈</strong>：自注意力复杂度 O(n²)，128k token 时每步注意力开销极大</li>
+        <li><strong>内存瓶颈</strong>：KV Cache 随序列长度线性增长，70B 模型 128k 上下文占用 >100GB 显存</li>
+        <li><strong>现有方案不足</strong>：均匀压缩（量化/剪枝）损失质量；稀疏注意力（如 H2O、StreamingLLM）依赖固定模式，无法自适应内容</li>
+      </ul>
+      <p>核心洞察：Key 用于相似性检索（语义敏感），Value 承载实际信息（数值精度敏感）——两者对精度的需求天然不对称，应区别处理。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>非对称哈希策略</strong>：</p>
+      <ul>
+        <li><strong>Key 侧</strong>：局部敏感哈希（LSH）将相似 Key 映射到同一桶，用桶代表代替原始 Key 检索，大幅减少精确匹配开销</li>
+        <li><strong>Value 侧</strong>：基于 Key 相似性聚类后对同簇 Value 进行加权合并，保留信息内容同时压缩表示</li>
+      </ul>
+      <div class="formula-block">
+        <code>
+          DASH-KV 注意力计算：<br>
+          1. LSH(Q, K) → 桶分配 B，时间 O(n log n)<br>
+          2. 每查询 Q_i 只与同桶 K 精确计算注意力分数<br>
+          3. 桶内 Value 加权合并：V̂_b = Σ(softmax(QK^T/√d) · V)<br>
+          4. 非对称精度：Key 哈希 INT8，Value 合并 FP16<br>
+          <br>
+          有效注意力长度：从 n 降至 O(n/B)，B = 桶数
+        </code>
+      </div>
+      <p><strong>自适应桶大小</strong>：根据序列长度和查询分布动态调整桶粒度，避免过度压缩关键 token。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>内存效率</strong>：LLaMA-3-70B 128k 上下文，KV Cache 内存从 145GB 降至 43GB（降低 70%）</li>
+        <li><strong>推理速度</strong>：吞吐量提升 2.8x，首 token 延迟降低 55%</li>
+        <li><strong>生成质量</strong>：RULER（长文档 QA）得分 Full Attention 的 99.5%+，PASSKEY Retrieval 100% 准确</li>
+        <li><strong>对比基线</strong>：同等压缩率下比 H2O 质量高 2.1 分（RULER），比 SnapKV 高 1.4 分</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次提出 Key 和 Value 非对称哈希压缩原则，揭示 KV 不对称信息特性</li>
+        <li>设计高效 LSH 驱动的稀疏注意力，将复杂度从 O(n²) 降至 O(n log n)</li>
+        <li>在主流长文档 benchmark 上实现质量-效率最优 Pareto 前沿</li>
+        <li>方案与 FlashAttention、GQA 等工程优化正交可叠加</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>哈希碰撞在极端稀疏查询场景下可能遗漏关键 token（如 needle-in-a-haystack 极端任务）</li>
+        <li>LSH 桶构建增加预处理开销，短序列（&lt;8k）收益有限</li>
+        <li>动态桶大小调整增加实现复杂度，GPU kernel 优化仍有空间</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

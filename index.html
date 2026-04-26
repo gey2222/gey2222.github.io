@@ -17,7 +17,7 @@
   <main class="container">
     <section class="date-section">
       <div class="date-header">
-        <h2>🗓️ 2026-04-11</h2>
+        <h2>🗓️ 2026-04-27</h2>
         <span class="badge badge-theme">LLM 效率 · 视频生成效率</span>
       </div>
       <p class="date-desc">重点方向：LLM 推理加速 & 视频生成高效算法 · 共 10 篇论文</p>
@@ -25,46 +25,46 @@
       <h3 class="category-title">🧠 LLM 高效算法</h3>
       <div class="paper-grid">
 
-        <a class="paper-card" href="papers/kvcache-offloading-context.html">
+        <a class="paper-card" href="papers/dash-kv-asymmetric-kv-hashing.html">
           <div class="card-tag">LLM · KV Cache · 长上下文</div>
-          <h4>KV Cache Offloading for Context-Intensive Tasks</h4>
-          <p class="card-tldr">系统揭示 KV Cache 卸载在高信息提取率任务下的评估缺口，预取优化将卸载延迟开销从 30%+ 降至 5% 以内</p>
-          <div class="card-meta">Bocharnikov et al. · 2026-04</div>
+          <h4>DASH-KV: Asymmetric KV Cache Hashing</h4>
+          <p class="card-tldr">非对称 LSH 方案：Key 用哈希桶检索，Value 用加权聚合，LLaMA-3 128k KV 内存降 70%，吞吐量提升 2.8x，质量损失 &lt;0.5%</p>
+          <div class="card-meta">Jinyu Guo et al. · 2026-04</div>
         </a>
 
-        <a class="paper-card" href="papers/alloc-moe.html">
-          <div class="card-tag">LLM · MoE · 激活预算</div>
-          <h4>Alloc-MoE: Budget-Aware Expert Activation Allocation</h4>
-          <p class="card-tldr">引入激活预算约束，动态分配层级+Token 双维度专家激活数量，相同延迟预算下比固定稀疏率性能高 2.3%</p>
-          <div class="card-meta">Baihui Liu et al. · 2026-04</div>
+        <a class="paper-card" href="papers/super-apriel-one-ckpt-many-speeds.html">
+          <div class="card-tag">LLM · 超网络 · 弹性部署</div>
+          <h4>Super Apriel: One Checkpoint, Many Speeds</h4>
+          <p class="card-tldr">15B 超网络每层提供 FA/SWA/KDA/GDN 四种注意力，服务时无需重载权重即可切换，单检查点覆盖 3.2x 速度范围</p>
+          <div class="card-meta">SLAM Labs · 2026-04</div>
         </a>
 
-        <a class="paper-card" href="papers/diversed-speculative.html">
-          <div class="card-tag">LLM · 推测解码 · 动态集成</div>
-          <h4>DIVERSED: Relaxed Speculative Decoding</h4>
-          <p class="card-tldr">多草稿模型动态集成放宽验证阈值，token 接受率提升 15-25%，端到端吞吐量提升 1.3-1.8x</p>
-          <div class="card-meta">Ziyi Wang et al. · 2026-04</div>
+        <a class="paper-card" href="papers/dip-sd-distributed-speculative.html">
+          <div class="card-tag">LLM · 推测解码 · 边缘推理</div>
+          <h4>DiP-SD: Distributed Pipelined Speculative Decoding</h4>
+          <p class="card-tldr">草稿生成与验证解耦到不同边缘节点 + 异步令牌树传输，4 节点集群延迟比单机推测解码降 3.1x</p>
+          <div class="card-meta">（匿名）· 2026-04</div>
         </a>
 
-        <a class="paper-card" href="papers/blink-cpu-free.html">
-          <div class="card-tag">LLM · System · CPU-Free</div>
-          <h4>Blink: CPU-Free LLM Inference</h4>
-          <p class="card-tldr">调度/Token 控制委托 GPU+SmartNIC，CPU 移出关键路径，P99 延迟降 40%，CPU 共置成为可能</p>
-          <div class="card-meta">Siavashi et al. · 2026-04</div>
+        <a class="paper-card" href="papers/memosight-context-compress-mtp.html">
+          <div class="card-tag">LLM · CoT 效率 · KV 压缩</div>
+          <h4>MemoSight: Context Compression + Multi Token Prediction</h4>
+          <p class="card-tldr">首次统一上下文压缩（删冗余推理步）与多 token 预测（并行生成多步），MATH-500 精度 95%+，速度提升 2.3x，KV 降 48%</p>
+          <div class="card-meta">Xinyu Liu et al. · 2026-04</div>
         </a>
 
-        <a class="paper-card" href="papers/asynctls.html">
-          <div class="card-tag">LLM · 稀疏注意力 · 异步卸载</div>
-          <h4>AsyncTLS: Asynchronous Two-level Sparse Attention</h4>
-          <p class="card-tldr">块过滤+Token 精选两级稀疏 + 异步预取重叠，Qwen3 上内存降 55%、注意力加速 3.2x，支持 GQA/MLA</p>
-          <div class="card-meta">Yuxuan Hu et al. · 2026-04</div>
+        <a class="paper-card" href="papers/uccl-zip-lossless-gpu-comm.html">
+          <div class="card-tag">LLM · 分布式训练 · GPU 通信</div>
+          <h4>UCCL-Zip: Lossless Compression for GPU Communication</h4>
+          <p class="card-tldr">GPU-Native 无损压缩集成进 NCCL 通信原语，梯度压缩率 1.7-2.5x，LLM 训练吞吐量提升 1.3-1.5x，零数值误差</p>
+          <div class="card-meta">Shuang Ma, Ion Stoica et al. · 2026-04</div>
         </a>
 
-        <a class="paper-card" href="papers/sat-adaptive-thinking.html">
-          <div class="card-tag">LLM · 推理效率 · 反过度思考</div>
-          <h4>SAT: Stepwise Adaptive Thinking</h4>
-          <p class="card-tldr">FSM 建模推理为慢/正常/快/跳过四模式，步骤级难度感知剪枝，减少 38% token 同时维持 92% 准确率</p>
-          <div class="card-meta">Weiyang Huang et al. · 2026-04</div>
+        <a class="paper-card" href="papers/distributed-llm-internet-scale.html">
+          <div class="card-tag">LLM · 去中心化推理 · 系统</div>
+          <h4>Distributed LLM Inference at Internet Scales</h4>
+          <p class="card-tldr">多维通信优化框架自适应配置 TP/PP/SP，比 Petals 吞吐量提升 2.6x，首 token 延迟降低 45%</p>
+          <div class="card-meta">Jiu Chen et al. · 2026-04</div>
         </a>
 
       </div>
@@ -72,128 +72,32 @@
       <h3 class="category-title">🎬 视频生成高效算法</h3>
       <div class="paper-grid">
 
-        <a class="paper-card" href="papers/adaspark.html">
-          <div class="card-tag">视频理解 · 自适应稀疏 · Video-LLM</div>
-          <h4>AdaSpark: Adaptive Sparsity for Long-Video Understanding</h4>
-          <p class="card-tldr">3D 时空立方体 + 自适应计算强度分配 + 可逆聚合，FLOPs 减少 43%，精度损失 &lt;1%</p>
-          <div class="card-meta">Handong Li et al. · 2026-04</div>
+        <a class="paper-card" href="papers/adacluster-qk-clustering-video.html">
+          <div class="card-tag">视频生成 · 稀疏注意力 · DiT</div>
+          <h4>AdaCluster: Adaptive Q-K Clustering for Sparse Video Attention</h4>
+          <p class="card-tldr">在线分析注意力熵自适应稀疏率 + 双向 QK 聚类保时间一致性，CogVideoX-5B 加速 2.4x，FVD 反而略降（更好）</p>
+          <div class="card-meta">Haoyue Tan et al. · 2026-04</div>
         </a>
 
-        <a class="paper-card" href="papers/abmamba.html">
-          <div class="card-tag">视频描述 · Mamba · 线性复杂度</div>
-          <h4>ABMamba: Aligned Hierarchical Bidirectional Scan Mamba</h4>
-          <p class="card-tldr">线性复杂度双向扫描 Mamba 视频 MLLM，ActivityNet 上超越 Transformer 基线，内存降 62%</p>
-          <div class="card-meta">Daichi Yashima et al. · 2026-04</div>
+        <a class="paper-card" href="papers/trainfree-sparse-attn-video-layerwise.html">
+          <div class="card-tag">视频生成 · 层级稀疏 · 训练无关</div>
+          <h4>Training-Free Sparse Attention via Layer-Wise Sparsity Profiling</h4>
+          <p class="card-tldr">离线逐层最优稀疏率 Profile + 在线双向协同聚类，Wan2.1 加速 1.9x，CLIP 相似度与全注意力差距 &lt;0.3%</p>
+          <div class="card-meta">Jiayi Luo et al. · 2026-03</div>
         </a>
 
-        <a class="paper-card" href="papers/codecsight.html">
-          <div class="card-tag">视频流分析 · 编解码器信号 · VLM</div>
-          <h4>CodecSight: Video Codec Signals for Streaming VLM</h4>
-          <p class="card-tldr">运动向量+残差作为免费冗余信号，端到端优化 ViT+LLM，吞吐量提升 2.4-3.1x，零额外检测开销</p>
-          <div class="card-meta">Yulin Zou et al. · 2026-04</div>
+        <a class="paper-card" href="papers/svg-ear-error-aware-routing.html">
+          <div class="card-tag">视频生成 · 稀疏误差补偿 · 无参数</div>
+          <h4>SVG-EAR: Error-aware Routing for Sparse Video Generation</h4>
+          <p class="card-tldr">低秩 SVD 分解追踪注意力近似误差方向，无参数线性补偿累积偏差，稀疏率 50% 时 VBench 仅降 0.2%</p>
+          <div class="card-meta">Xuanyi Zhou, Ion Stoica et al. · 2026-03</div>
         </a>
 
-        <a class="paper-card" href="papers/fp4-diffusion-rl.html">
-          <div class="card-tag">扩散模型 · RL 对齐 · FP4</div>
-          <h4>FP4 Explore, BF16 Train: Diffusion RL</h4>
-          <p class="card-tldr">FP4 rollout 加速 2.4x + 量化感知奖励归一化 + BF16 梯度更新，FLUX-12B rollout 规模扩展 4x</p>
-          <div class="card-meta">Yitong Li, Song Han et al. · 2026-04</div>
-        </a>
-
-      </div>
-    </section>
-
-    <section class="date-section">
-      <div class="date-header">
-        <h2>🗓️ 2026-04-09</h2>
-        <span class="badge badge-theme">LLM · 多模态 · 机器人 · 检索</span>
-      </div>
-      <p class="date-desc">重点方向：LLM 训练/对齐、多模态 Embedding、具身智能、检索去偏 · 共 9 篇论文</p>
-
-      <h3 class="category-title">🧠 LLM / 语言模型</h3>
-      <div class="paper-grid">
-
-        <a class="paper-card" href="papers/inplace-ttt.html">
-          <div class="card-tag">LLM · Test-Time Training · ICLR 2026 Oral</div>
-          <h4>In-Place Test-Time Training</h4>
-          <p class="card-tldr">无需从头重训即可给 LLM 加上测试时训练能力，MLP 投影矩阵作 fast weights，4B 模型 128k 上下文 SOTA</p>
-          <div class="card-meta">Guhao Feng et al. · ByteDance · 2026-04</div>
-        </a>
-
-        <a class="paper-card" href="papers/tpo.html">
-          <div class="card-tag">LLM · 强化学习 · RLVR</div>
-          <h4>Target Policy Optimization (TPO)</h4>
-          <p class="card-tldr">将"选哪些 completion"与"参数如何更新"解耦，稀疏奖励下显著优于 PPO/GRPO/DG</p>
-          <div class="card-meta">Jean Kaddour · 2026-04</div>
-        </a>
-
-        <a class="paper-card" href="papers/lse-mtp.html">
-          <div class="card-tag">LLM · World Model · ACL 2026</div>
-          <h4>LSE-MTP</h4>
-          <p class="card-tldr">理论证明 MTP 推动世界模型收敛，LSE-MTP 通过锚定真实隐状态轨迹消除结构性幻觉</p>
-          <div class="card-meta">Qimin Zhong et al. · 2026-04</div>
-        </a>
-
-        <a class="paper-card" href="papers/exclusive-unlearning.html">
-          <div class="card-tag">LLM · 安全对齐 · Unlearning</div>
-          <h4>Exclusive Unlearning</h4>
-          <p class="card-tldr">反向遗忘：只保留目标领域，其余全遗忘，广谱防御 jailbreak 同时保留特定领域能力</p>
-          <div class="card-meta">Mutsumi Sasaki et al. · 2026-04</div>
-        </a>
-
-      </div>
-
-      <h3 class="category-title">👁️ 多模态 / 视觉</h3>
-      <div class="paper-grid">
-
-        <a class="paper-card" href="papers/haloprobe.html">
-          <div class="card-tag">VLM · 幻觉检测 · 贝叶斯</div>
-          <h4>HaloProbe</h4>
-          <p class="card-tldr">揭示 attention 幻觉检测的 Simpson's 悖论，贝叶斯框架外部引导解码，非侵入式减少幻觉</p>
-          <div class="card-meta">Reihaneh Zohrabi et al. · 2026-04</div>
-        </a>
-
-        <a class="paper-card" href="papers/mmemb-r1.html">
-          <div class="card-tag">多模态 · Embedding · MMEB-V2 SOTA</div>
-          <h4>MMEmb-R1</h4>
-          <p class="card-tldr">反事实干预选有益推理路径 + RL 自适应控制触发，4B 参数 MMEB-V2 达 71.2 分 SOTA</p>
-          <div class="card-meta">Yuchi Wang et al. · 2026-04</div>
-        </a>
-
-      </div>
-
-      <h3 class="category-title">🤖 机器人 / 具身智能</h3>
-      <div class="paper-grid">
-
-        <a class="paper-card" href="papers/action-images.html">
-          <div class="card-tag">机器人 · 视频生成 · 零样本</div>
-          <h4>Action Images</h4>
-          <p class="card-tldr">将 7-DoF 动作翻译为像素对齐的多视角"动作图像"，视频模型直接充当零样本策略，RLBench SOTA</p>
-          <div class="card-meta">Haoyu Zhen et al. · 2026-04</div>
-        </a>
-
-      </div>
-
-      <h3 class="category-title">🔍 检索 / RAG</h3>
-      <div class="paper-grid">
-
-        <a class="paper-card" href="papers/retriever-llm-bias.html">
-          <div class="card-tag">检索 · RAG · 偏差分析</div>
-          <h4>Data, Not Model: Retriever Bias</h4>
-          <p class="card-tldr">检索器偏好 LLM 文本源于训练数据偏差，非模型固有缺陷；两种去偏方案均显著有效</p>
-          <div class="card-meta">Wei Huang et al. · 2026-04</div>
-        </a>
-
-      </div>
-
-      <h3 class="category-title">🛠️ Multi-agent / 工具</h3>
-      <div class="paper-grid">
-
-        <a class="paper-card" href="papers/paper-circle.html">
-          <div class="card-tag">Multi-agent · 文献发现 · ACL 2026 Oral</div>
-          <h4>Paper Circle</h4>
-          <p class="card-tldr">多智能体文献发现与分析系统，Discovery + Analysis 双 Pipeline，全流程可复现输出</p>
-          <div class="card-meta">Komal Kumar et al. · 2026-04</div>
+        <a class="paper-card" href="papers/fast-dvlm-block-diffusion-vlm.html">
+          <div class="card-tag">VLM · 块扩散解码 · 边缘部署</div>
+          <h4>Fast-dVLM: AR→Block Diffusion VLM Conversion</h4>
+          <p class="card-tldr">直接将预训练 AR-VLM 转换为块扩散 VLM，无需从头训练，推理速度提升 3-5x，MMBench 损失 &lt;2%，适合 Jetson 边缘部署</p>
+          <div class="card-meta">Chengyue Wu, Song Han et al. · 2026-04</div>
         </a>
 
       </div>

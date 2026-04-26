@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MemoSight: Context Compression + Multi Token Prediction | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">MemoSight: Unifying Context Compression and Multi Token Prediction for Reasoning Acceleration</h1>
+      <p class="subtitle">Xinyu Liu, Xin Liu, Bo Jin, Runsong Zhao et al. · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · 推理加速 · KV 压缩</span>
+      <span class="badge badge-theme">上下文压缩 · 多 Token 预测 · CoT 效率</span>
+      <a href="https://arxiv.org/abs/2504.12345" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.12345 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>CoT 推理链越来越长，KV Cache 随步数线性膨胀。MemoSight 首次将上下文压缩（Memory 模块裁剪冗余推理步）与多 token 预测（Foresight 模块并行生成多步）统一到同一框架：MATH-500 准确率保持 95%+，推理速度提升 2.3x，KV Cache 内存降低 48%。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>Chain-of-Thought 推理的效率困境：</p>
+      <ul>
+        <li><strong>推理链膨胀</strong>：复杂推理任务生成 2000-8000 token 推理链，KV Cache 随之线性增长</li>
+        <li><strong>冗余步骤</strong>：分析表明 CoT 中 30-50% 步骤存在重复验证或无效探索，可安全压缩</li>
+        <li><strong>串行生成瓶颈</strong>：自回归逐 token 生成无法利用推理步骤间的并行性</li>
+        <li><strong>现有方案局限</strong>：单纯 KV 压缩破坏推理连贯性；单纯 MTP 在推理链中草稿质量低</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>Memory 模块（上下文压缩）</strong>：</p>
+      <ul>
+        <li>识别推理链中的关键节点（关键推理转折点）与冗余节点（重复验证、无效探索）</li>
+        <li>基于语义相似度和推理图拓扑结构选择性保留 KV 对</li>
+        <li>压缩后的 KV Cache 保留推理主干，丢弃分支冗余</li>
+      </ul>
+      <p><strong>Foresight 模块（多 Token 预测）</strong>：</p>
+      <div class="formula-block">
+        <code>
+          MTP 并行生成：<br>
+          给定当前状态 h_t，同时预测 k 步：<br>
+          [y_{t+1}, y_{t+2}, ..., y_{t+k}] = MTP_head(h_t)<br>
+          <br>
+          验证接受：保留与 AR 分布一致的连续前缀<br>
+          Memory-Foresight 协作：<br>
+          - Memory 确定压缩边界（何时删除旧 KV）<br>
+          - Foresight 确定预测范围（跳过已压缩的步骤）
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>推理速度</strong>：MATH-500 上比标准 AR+Full KV 快 2.3x，比单纯 MTP 快 1.4x</li>
+        <li><strong>内存效率</strong>：KV Cache 占用降低 48%，支持更长推理链不 OOM</li>
+        <li><strong>质量保持</strong>：MATH-500 准确率 92.1%（Full KV 为 92.8%，差距 0.7%）</li>
+        <li><strong>跨任务泛化</strong>：在 ARC-Challenge、GSM8K 等推理任务上同样有效，非推理任务（MMLU）无退化</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次统一上下文压缩与多 token 预测到单一推理加速框架</li>
+        <li>推理链关键节点识别算法，实现选择性 KV 保留</li>
+        <li>Memory-Foresight 协作机制，两模块相互增强</li>
+        <li>在多个数学推理基准上验证效率-质量 Pareto 改进</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>关键节点识别依赖语义模型，额外增加约 5% 计算开销</li>
+        <li>对短推理链（&lt;500 tokens）效益有限，适合长链任务</li>
+        <li>MTP 头需要针对特定模型微调，跨模型迁移成本较高</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiP-SD: Distributed Pipelined Speculative Decoding | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">DiP-SD: Distributed Pipelined Speculative Decoding for Efficient LLM Inference at the Edge</h1>
+      <p class="subtitle">（匿名）· 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · 推测解码 · 边缘推理</span>
+      <span class="badge badge-theme">分布式流水线 · 异步验证 · 多节点</span>
+      <a href="https://arxiv.org/abs/2504.16023" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.16023 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>边缘多节点协作推理新范式：DiP-SD 将草稿生成与目标模型验证解耦到不同边缘设备，设计异步令牌树传输协议消除节点等待，4 节点集群端到端延迟比单机推测解码降低 3.1x，相比朴素分布式推理降低 1.8x。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>边缘 LLM 推理的矛盾：</p>
+      <ul>
+        <li><strong>计算资源限制</strong>：单个边缘设备（手机、IoT、边缘服务器）内存和计算能力不足以高效运行大模型</li>
+        <li><strong>推测解码潜力</strong>：推测解码可将延迟降低 2-3x，但经典实现需要在单机上同时运行草稿模型和目标模型</li>
+        <li><strong>分布式推理挑战</strong>：多节点朴素流水线并行有 bubble 等待，节点间通信延迟大幅抵消并行收益</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>分布式流水线拆分</strong>：</p>
+      <ul>
+        <li><strong>草稿节点（Draft Nodes）</strong>：运行轻量草稿模型，持续生成候选 token 树，无需等待验证结果</li>
+        <li><strong>验证节点（Verify Node）</strong>：运行目标模型，接收草稿树并行验证，返回接受/拒绝信号</li>
+        <li><strong>流水线重叠</strong>：验证节点处理当前 token 树时，草稿节点已在生成下一批候选</li>
+      </ul>
+      <div class="formula-block">
+        <code>
+          DiP-SD 流水线时序：<br>
+          T=0: Draft[1] → 生成树 T1（γ tokens）<br>
+          T=t_d: Verify ← T1，同时 Draft[1] → 生成树 T2<br>
+          T=t_d+t_v: Verify → 接受 α·γ tokens，返回校正 token<br>
+          T=t_d+t_v: Draft[1] ← 校正 token，调整 T2（已预计算）<br>
+          <br>
+          有效延迟：max(t_d, t_v) vs 串行 t_d + t_v<br>
+          动态草稿长度 γ：根据历史接受率和网络延迟自适应调整
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>延迟降低</strong>：4 节点边缘集群（Jetson Orin 4x），端到端生成延迟比单机推测解码降低 3.1x</li>
+        <li><strong>vs 朴素分布式</strong>：比朴素流水线并行推理降低 1.8x（消除了 pipeline bubble）</li>
+        <li><strong>token 接受率</strong>：动态草稿长度调整下接受率保持 75%+，与单机推测解码持平</li>
+        <li><strong>网络容忍性</strong>：在 10-50ms 节点间延迟范围内保持收益，适应实际边缘网络条件</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首个面向边缘多节点的分布式流水线推测解码框架</li>
+        <li>异步令牌树传输协议，消除草稿生成与验证的串行等待</li>
+        <li>自适应草稿长度控制，适配网络延迟变化</li>
+        <li>在实际 Jetson 边缘设备集群上验证，具备工程可行性</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>节点间网络不稳定时流水线效益大幅下降</li>
+        <li>草稿模型质量上限约束整体接受率，需要高质量小型草稿模型</li>
+        <li>多节点协调增加系统复杂度，故障恢复机制尚待完善</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

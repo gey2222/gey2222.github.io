@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AdaCluster: Adaptive Query-Key Clustering for Video Generation | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">AdaCluster: Adaptive Query-Key Clustering for Sparse Attention in Video Generation</h1>
+      <p class="subtitle">Haoyue Tan, Shengnan Wang, Yulin Qiao, Juncheng Zhang, Youhui Bai et al. · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-video">视频生成 · 稀疏注意力 · DiT</span>
+      <span class="badge badge-theme">自适应聚类 · 训练无关 · CogVideoX</span>
+      <a href="https://arxiv.org/abs/2504.14901" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.14901 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>视频 DiT 注意力随帧数二次增长是核心瓶颈，AdaCluster 在线分析每层注意力图结构，自适应确定稀疏比例，同时对 Query 和 Key 进行双向聚类保证时间一致性。CogVideoX-5B 推理加速 2.4x，FVD 还略有改善，完全训练无关。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>视频 DiT 效率挑战：</p>
+      <ul>
+        <li><strong>计算爆炸</strong>：24 帧 720p 视频对应约 20k token，全注意力计算量是图像的 576 倍</li>
+        <li><strong>内容多样性</strong>：不同视频内容（动态/静态、场景切换）导致注意力稀疏模式差异极大，固定稀疏无效</li>
+        <li><strong>时间一致性要求</strong>：视频生成需要跨帧 token 保持一致，不当稀疏导致帧抖动</li>
+        <li><strong>现有方法局限</strong>：固定窗口稀疏（如局部注意力）无法自适应内容；全局 Top-K 稀疏计算选择开销大</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>双向自适应聚类</strong>：</p>
+      <ul>
+        <li><strong>Query 聚类</strong>：将语义相似的 Query token 分组，同簇共享注意力模式</li>
+        <li><strong>Key 聚类</strong>：将 Key token 按内容相似度分桶，每个 Query 组只关注最相关 Key 桶</li>
+        <li><strong>自适应稀疏率</strong>：在线分析当前层注意力熵，高熵层（复杂依赖）保留更多 KV，低熵层（局部依赖）大幅稀疏</li>
+      </ul>
+      <div class="formula-block">
+        <code>
+          AdaCluster 注意力计算：<br>
+          1. 在线聚类：K-Means++ 对 Q, K 分别聚 C_Q, C_K 簇<br>
+          2. 簇级路由矩阵：R[i,j] = 簇 i 到簇 j 的平均注意力分数<br>
+          3. 自适应阈值：θ = Percentile(R, 1 - sparsity_rate)<br>
+          4. 稀疏执行：仅计算 R[i,j] > θ 的簇对<br>
+          <br>
+          自适应稀疏率公式：<br>
+          s_l = s_base + α · (H_l - H_mean) / H_std<br>
+          其中 H_l = 层 l 的平均注意力熵
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>推理加速</strong>：CogVideoX-5B（24 帧 720p）推理加速 2.4x，无需任何微调</li>
+        <li><strong>生成质量</strong>：FVD（Fréchet Video Distance）相比全注意力降低 3.2%（值越低越好，反而改善），VBench 总分持平</li>
+        <li><strong>时间一致性</strong>：帧间一致性指标比固定稀疏基线高 4.1 点</li>
+        <li><strong>对比基线</strong>：比 ToMe（Token Merging）加速多 0.6x，质量高 1.8 FVD</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次提出视频 DiT 中 Query 和 Key 双向协同聚类稀疏注意力</li>
+        <li>基于注意力熵的自适应层级稀疏率分配</li>
+        <li>时间一致性保证机制，避免帧间抖动</li>
+        <li>完全训练无关，可直接部署到现有视频 DiT 模型</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>在线 K-Means 聚类增加约 8% 额外开销，极短视频收益有限</li>
+        <li>簇数 C_Q、C_K 为超参，不同视频分辨率需要重新调优</li>
+        <li>极高动态视频（快速运动场景）时自适应稀疏率可能不稳定</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

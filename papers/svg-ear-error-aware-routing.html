@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SVG-EAR: Error-aware Routing for Sparse Video Generation | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">SVG-EAR: Parameter-Free Linear Compensation for Sparse Video Generation via Error-aware Routing</h1>
+      <p class="subtitle">Xuanyi Zhou, Qiuyang Mang, Kurt Keutzer, Ion Stoica, Alvin Cheung et al. · 2026-03</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-video">视频生成 · 稀疏注意力 · 误差补偿</span>
+      <span class="badge badge-theme">无参数线性补偿 · 误差感知路由 · HunyuanVideo</span>
+      <a href="https://arxiv.org/abs/2503.06945" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2503.06945 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>视频 DiT 稀疏注意力的近似误差会在去噪步骤中累积放大——SVG-EAR 提出无参数误差感知路由：追踪每步注意力近似误差方向，用低秩线性投影补偿偏差，完全不引入新参数。稀疏率 50% 时 VBench 仅下降 0.2%，显著优于无补偿基线。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <p>稀疏注意力误差累积问题：</p>
+      <ul>
+        <li><strong>去噪链误差放大</strong>：视频生成需要 20-50 个去噪步骤，每步稀疏注意力引入的小误差经过多步传播后显著放大</li>
+        <li><strong>参数化补偿代价高</strong>：现有方法通过微调 adapter 补偿误差，但增加参数量且需要重新训练</li>
+        <li><strong>误差方向可预测</strong>：注意力近似误差不是随机噪声，而是有结构的低秩偏差，可以用线性方法修正</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>无参数误差感知路由</strong>：</p>
+      <ul>
+        <li><strong>误差追踪</strong>：在少量校准步骤中，计算稀疏注意力与全注意力的输出差 δ = Attn_full(x) - Attn_sparse(x)</li>
+        <li><strong>低秩误差建模</strong>：SVD 分解 δ，保留前 r 个奇异向量，得到低秩误差基底 U, V</li>
+        <li><strong>在线线性补偿</strong>：推理时用缓存的 U, V 对稀疏注意力输出做线性校正</li>
+      </ul>
+      <div class="formula-block">
+        <code>
+          SVG-EAR 补偿公式：<br>
+          δ̂ = Attn_full(x_calib) - Attn_sparse(x_calib)  [离线计算]<br>
+          [U, Σ, V^T] = SVD(δ̂)  [取前 r 个奇异值]<br>
+          <br>
+          推理时补偿：<br>
+          Attn_corrected(x) = Attn_sparse(x) + U · diag(Σ) · V^T · x<br>
+          <br>
+          无额外参数：U, V 从注意力输出导出，非可训练参数<br>
+          r=4 时计算开销 &lt;1%，补偿精度覆盖 80%+ 误差方差
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>质量恢复</strong>：CogVideoX（稀疏率 50%）VBench 从 70.1% 恢复到 82.3%（全注意力 82.5%），恢复率 99%</li>
+        <li><strong>HunyuanVideo</strong>：稀疏率 50%，VBench 差距仅 0.2%；稀疏率 65% 时差距 1.1%</li>
+        <li><strong>对比参数化方案</strong>：无参数补偿质量与 adapter 微调方案持平，且无训练开销</li>
+        <li><strong>低秩补偿开销</strong>：r=4 秩补偿增加 &lt;1% 推理时间</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>揭示视频 DiT 稀疏注意力误差的低秩结构特性</li>
+        <li>无参数误差感知路由设计，完全免训练</li>
+        <li>离线校准 + 在线线性补偿的高效两阶段框架</li>
+        <li>在多个主流视频生成模型（CogVideoX、HunyuanVideo）上验证效果</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>低秩假设在高动态视频（场景切换剧烈）时误差结构可能非低秩，补偿效果下降</li>
+        <li>校准样本需要与目标分布匹配，跨风格迁移需重新校准</li>
+        <li>只补偿注意力误差，MLP 和 norm 层的误差未纳入考虑</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>
