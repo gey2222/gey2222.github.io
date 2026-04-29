@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carbon-Taxed Transformers: Green Compression Pipeline | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">Carbon-Taxed Transformers: A Green Compression Pipeline for Overgrown Language Models</h1>
+      <p class="subtitle">Ajmain Inqiad Alam, Palash Roy, Chanchal K. Roy, Banani Roy, Kevin A. Schneider · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · 绿色 AI · 模型压缩</span>
+      <span class="badge badge-theme">剪枝 · 量化 · 碳效率</span>
+      <a href="https://arxiv.org/abs/2504.20001" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.20001 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>LLM 推理已成为可观的碳排放源。本文提出"碳税"感知的系统性压缩管线，在剪枝-分解-量化三阶段压缩中同步最小化碳预算，引入 Green Efficiency Score（GES）度量效率-碳排放 Pareto 权衡。LLaMA-2-13B → 3.8B，能效提升 3.1x，MMLU 仅降 1.5%。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>碳排放问题</strong>：单次 GPT-4 规模推理请求的碳排放约等于发送 10 封电子邮件；大规模服务每天数十亿次请求带来巨大环境成本</li>
+        <li><strong>现有压缩的局限</strong>：剪枝/量化方法只优化参数量和延迟，未将碳预算纳入优化目标</li>
+        <li><strong>碳-性能矛盾</strong>：激进压缩节省碳但损精度；需要找到最优 Pareto 前沿</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>三阶段绿色压缩管线</strong>：</p>
+      <ol>
+        <li><strong>结构化剪枝（Carbon-Aware Pruning）</strong>：按层级碳贡献分配剪枝 budget，高碳层（大矩阵）优先压缩</li>
+        <li><strong>低秩分解（LoRA-Decompose）</strong>：对剪枝后的残差权重 SVD 分解，秩由碳预算自动选取</li>
+        <li><strong>量化（Green Quantization）</strong>：结合 GPTQ 方法，以 INT4/INT8 混合精度最小化 FLOPs × 碳因子</li>
+      </ol>
+      <div class="formula-block">
+        <code>
+          Green Efficiency Score (GES):<br>
+          GES = Perf(M) / (α · Params(M) + β · CO₂(M))<br>
+          其中 α, β 为用户自定义碳-参数权重系数<br>
+          <br>
+          优化目标：max GES  s.t. Perf ≥ Perf_threshold
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>LLaMA-2-13B</strong>：压缩至 3.8B 参数（71% 压缩），MMLU 88.1 → 86.7（-1.5%），推理能效 3.1x</li>
+        <li><strong>GES 对比</strong>：比 SparseGPT 单纯剪枝高 40%，比 GPTQ 单纯量化高 28%</li>
+        <li><strong>碳排放</strong>：相同任务量下碳排放降低 68%（基于 NVIDIA energy metrics）</li>
+        <li><strong>端到端延迟</strong>：A100 单卡推理吞吐量从 2.1k token/s 提升至 6.5k token/s</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次将碳排放纳入 LLM 压缩优化目标，提出 GES 评估指标</li>
+        <li>设计剪枝-分解-量化联合优化管线，三阶段协同最优</li>
+        <li>开源碳感知压缩工具链，支持主流 Transformer 架构</li>
+        <li>在 MMLU/HellaSwag/ARC 等多 benchmark 验证绿色压缩有效性</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>碳因子依赖区域电网排放系数，不同地区结果有差异</li>
+        <li>三阶段管线超参数较多，自动调参代价可能抵消部分收益</li>
+        <li>未评估训练阶段碳排放（仅覆盖推理）</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A Systematic Post-Train Framework for Video Generation | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">A Systematic Post-Train Framework for Video Generation</h1>
+      <p class="subtitle">Zeyue Xue, Siming Fu, Jie Huang, Shuai Lu, Haoran Li, Yijun Liu, Yuming Li, Xiaoxuan He, Mengzhao Chen, Haoyang Huang, Nan Duan, Ping Luo · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-video">视频生成 · 后训练 · RLHF</span>
+      <span class="badge badge-theme">奖励对齐 · 课程学习 · LoRA 微调</span>
+      <a href="https://arxiv.org/abs/2504.20169" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.20169 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>视频扩散模型的后训练（RLHF/奖励对齐）缺乏系统性框架，各模块独立优化效率低。本文提出统一后训练流程：多维奖励建模 + 奖励引导去噪采样 + 图像→短视频→长视频渐进课程，仅需 LoRA 微调。VBench++ 6/8 维度超越同规模基线，对齐训练成本仅原始 3%。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>视频生成后训练的必要性</strong>：预训练视频模型在主观质量（美学）、文本对齐、运动合理性上仍有提升空间</li>
+        <li><strong>现有后训练的分散性</strong>：不同团队独立优化美学奖励、运动奖励、文本对齐奖励，缺乏统一框架，优化方向可能互相冲突</li>
+        <li><strong>长视频对齐难题</strong>：直接对长视频做 RLHF 计算量极大，且奖励信号稀疏</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>三阶段系统性后训练</strong>：</p>
+      <ol>
+        <li><strong>多维奖励建模</strong>：同时训练美学奖励 R_aes、运动奖励 R_mot、文本对齐奖励 R_txt 三个独立奖励模型，用人类偏好数据标注</li>
+        <li><strong>奖励引导去噪采样</strong>：在扩散采样过程中加入奖励梯度引导（类 Classifier Guidance），多维奖励加权组合</li>
+        <li><strong>渐进式课程对齐</strong>：先图像级对齐（最便宜），再短视频（5s），再长视频（30s），逐步迁移</li>
+      </ol>
+      <div class="formula-block">
+        <code>
+          奖励引导采样：<br>
+          ε_guided = ε_θ(x_t) - s · ∇_{x_t}[w_a·R_aes + w_m·R_mot + w_t·R_txt]<br>
+          <br>
+          渐进课程：<br>
+          Stage 1: image pairs (R_aes + R_txt, cheap)<br>
+          Stage 2: 5s video (+ R_mot)<br>
+          Stage 3: 30s video (full rewards, LoRA only)<br>
+          <br>
+          总训练成本：原始预训练 FLOPs 的 3%
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>VBench++</strong>：8 维度中 6 维度超越同规模基线（美学 +3.2、运动 +4.1、文本对齐 +5.3%）</li>
+        <li><strong>人类偏好</strong>：A/B 测试中 68% 的评测者偏好系统后训练结果</li>
+        <li><strong>训练成本</strong>：LoRA 微调，仅需原始训练 3% 的 FLOPs 完成对齐</li>
+        <li><strong>泛化性</strong>：在 Wan2.1、HunyuanVideo 两个不同基础模型上均有效</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>提出首个系统性视频生成后训练框架，统一多维度奖励优化</li>
+        <li>奖励引导去噪采样将奖励直接嵌入生成过程，不依赖强化学习更新</li>
+        <li>图像→短视频→长视频渐进课程大幅降低对齐成本</li>
+        <li>开源后训练工具链和奖励模型，可接入任意视频扩散基础模型</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>奖励模型本身的标注质量直接决定对齐效果，奖励偏差（reward hacking）风险存在</li>
+        <li>渐进课程中图像→视频的迁移假设成立，对某些运动相关奖励可能迁移效果差</li>
+        <li>多维奖励权重 w_a, w_m, w_t 需要手动调整，不同场景最优权重不同</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

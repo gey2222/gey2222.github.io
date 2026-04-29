@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Long-Horizon Streaming Video: Hybrid Attention with Decoupled Distillation | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">Long-Horizon Streaming Video Generation via Hybrid Attention with Decoupled Distillation</h1>
+      <p class="subtitle">Ruibin Li, Tao Yang, Fangzhou Ai, Tianhe Wu, Shilei Wen, Bingyue Peng, Lei Zhang · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-video">视频生成 · 长视频 · 流式</span>
+      <span class="badge badge-theme">混合注意力 · 解耦蒸馏 · 时序一致性</span>
+      <a href="https://arxiv.org/abs/2504.07929" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.07929 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>分钟级视频生成需要跨越数千帧的时序一致性，全注意力计算不可行。本文提出混合注意力（局部密集 + 全局稀疏）保持时序连贯，解耦蒸馏将教师全注意力知识迁移到学生稀疏注意力，内容与运动分支分别蒸馏。生成速度提升 2.8x，DOVER 主观质量高于基线 4.2 分。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>长视频生成挑战</strong>：1 分钟 24fps 视频 = 1440 帧，DiT 全注意力复杂度 O(1440²) 完全不可行</li>
+        <li><strong>时序一致性需求</strong>：视频不同于图像批次，帧间运动和外观必须连贯，局部注意力会产生"闪烁"伪影</li>
+        <li><strong>流式生成需求</strong>：用户需要边生成边播放，不能等待完整视频生成完毕</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>混合注意力（Hybrid Attention）</strong>：</p>
+      <div class="formula-block">
+        <code>
+          对帧序列 F = {f_1, ..., f_T}：<br>
+          <br>
+          局部窗口注意力（相邻 w 帧内）：<br>
+          A_local(i) = softmax(Q_i K_{i-w:i+w}^T / √d) V_{i-w:i+w}<br>
+          <br>
+          全局稀疏注意力（每 s 帧采一个锚帧）：<br>
+          A_global(i) = softmax(Q_i K_anchor^T / √d) V_anchor<br>
+          where K_anchor = {K_j | j mod s == 0}<br>
+          <br>
+          混合输出：A = α·A_local + (1-α)·A_global
+        </code>
+      </div>
+      <p><strong>解耦蒸馏（Decoupled Distillation）</strong>：</p>
+      <ul>
+        <li><strong>内容分支蒸馏</strong>：匹配教师（全注意力）和学生（混合注意力）的 per-frame 特征图</li>
+        <li><strong>运动分支蒸馏</strong>：匹配帧间光流一致性，防止混合注意力破坏运动轨迹</li>
+        <li><strong>两分支独立 loss 权重</strong>：避免内容蒸馏和运动蒸馏相互干扰</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>速度</strong>：相比全注意力基线，1 分钟视频生成速度 2.8x（单 A100，720p 24fps）</li>
+        <li><strong>DOVER 主观质量</strong>：混合注意力+蒸馏 = 73.2 vs. 全注意力基线 69.0（+4.2 分）</li>
+        <li><strong>Temporal SSIM</strong>：帧间一致性 0.87 vs. 仅局部注意力 0.79（+10%）</li>
+        <li><strong>文本对齐</strong>：CLIP 文本-帧相似度 0.312 vs. 基线 0.305</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>提出局部密集 + 全局稀疏混合注意力，兼顾效率与长程时序一致性</li>
+        <li>解耦蒸馏框架分离内容与运动知识迁移，首次在视频生成中使用</li>
+        <li>实现流式长视频生成，首帧延迟 < 5s，边生成边可播放</li>
+        <li>在 DOVER/EvalCrafter 等评估集上超越全注意力基线质量</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>全局稀疏采样率 s 是固定超参，无法自适应场景（快动作需更密集采样）</li>
+        <li>蒸馏需要全注意力教师模型，增加训练成本</li>
+        <li>超过 2 分钟的视频生成时序一致性仍有退化趋势</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

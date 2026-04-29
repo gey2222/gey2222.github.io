@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AHASD: Asynchronous Speculative Decoding on Mobile | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">AHASD: Asynchronous Heterogeneous Architecture for LLM Adaptive Drafting Speculative Decoding on Mobile Devices</h1>
+      <p class="subtitle">Ma Zirui, Fan Zhihua, Li Wenxing, Wu Haibin, Zhang Fulin, Ye Xiaochun, Li Wenming · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · 推测解码 · 移动端</span>
+      <span class="badge badge-theme">异构架构 · CPU-GPU 协同 · 边缘推理</span>
+      <a href="https://arxiv.org/abs/2504.19876" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.19876 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>移动端 CPU+GPU 异构架构上，草稿模型与验证模型串行调度造成大量等待。AHASD 设计异步流水线将两者彻底解耦，自适应调整草稿 token 数量应对热降频，增量 KV 复用减少重算。骁龙 8 Gen 3 端到端延迟降低 2.1x。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>移动端 LLM 需求</strong>：端侧 AI 助手（如 Gemini Nano、Llama on-device）对延迟极度敏感</li>
+        <li><strong>推测解码的挑战</strong>：草稿模型（小模型）需要 CPU 执行，验证模型（大模型）需要 GPU，传统串行方式导致 CPU/GPU 交替等待，GPU 利用率低至 40%</li>
+        <li><strong>热降频问题</strong>：手机持续推理 2 分钟后 SoC 温度升高触发降频，草稿接受率显著下降</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>AHASD 三大设计</strong>：</p>
+      <ol>
+        <li><strong>异步流水线（Async Pipeline）</strong>：草稿生成和目标验证并行运行，CPU 生成下一批草稿时 GPU 同时验证当前批次，双缓冲消除等待</li>
+        <li><strong>自适应草稿长度（Adaptive Draft Length）</strong>：实时监控 SoC 温度和接受率，动态调整每步草稿 token 数量 γ（范围 2-8），防止降频后接受率崩溃</li>
+        <li><strong>增量 KV 复用（Incremental KV Reuse）</strong>：已验证 token 的 KV Cache 直接转入大模型缓存，避免重新计算</li>
+      </ol>
+      <div class="formula-block">
+        <code>
+          自适应草稿长度控制：<br>
+          γ_t = clip(γ_{t-1} · (α_t / α_target), γ_min, γ_max)<br>
+          其中 α_t 为当前步接受率，α_target 为目标接受率（0.7）<br>
+          <br>
+          GPU 利用率改善：从 40% → 78%（异步后）
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>延迟</strong>：骁龙 8 Gen 3，Llama-3.2-3B（草稿）+ Qwen2.5-7B（目标），端到端生成延迟 -52%</li>
+        <li><strong>接受率</strong>：持续运行 10 分钟后（模拟热降频），AHASD 接受率保持 0.68 vs. 基线 0.51（+33%）</li>
+        <li><strong>功耗</strong>：单位 token 功耗降低 18%（因 GPU 等待减少）</li>
+        <li><strong>代码质量测试</strong>：HumanEval pass@1 = 72.4%（与非加速模式相同，无精度损失）</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次系统分析移动端异构硬件上推测解码的瓶颈（CPU-GPU 同步开销）</li>
+        <li>设计完整的异步流水线调度器，CPU/GPU 利用率提升近 2x</li>
+        <li>热降频感知自适应策略，解决长时推理退化问题</li>
+        <li>开源移动端推测解码框架，支持 Android NPU/GPU 路径</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>异步流水线依赖草稿与验证之间的 token 对齐假设，流式输出场景需额外处理</li>
+        <li>当前仅验证骁龙平台，联发科/苹果 Silicon 效果待测</li>
+        <li>草稿模型选型对接受率影响大，需要针对目标模型精调搭配</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

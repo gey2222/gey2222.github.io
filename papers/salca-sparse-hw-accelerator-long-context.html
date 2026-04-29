@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Salca: Sparsity-Aware Hardware Accelerator for Long-Context Attention | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">Salca: A Sparsity-Aware Hardware Accelerator for Efficient Long-Context Attention Decoding</h1>
+      <p class="subtitle">Wang Fan, Wei Cao, Xi Zha, Kedi Ma, MingQian Sun, Jialin Chen, Fengzhe Zhang, Fan Zhang · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · 硬件加速 · 长上下文</span>
+      <span class="badge badge-theme">稀疏注意力 · ASIC · 高带宽内存</span>
+      <a href="https://arxiv.org/abs/2504.19480" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.19480 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>长上下文 LLM 解码阶段 KV Cache 访问是核心带宽瓶颈，现有 GPU/NPU 对非规则稀疏访问支持差。Salca 设计专用硬件加速器支持列稀疏 KV 访问模式，配合软硬件协同稀疏预测，128k 上下文解码吞吐量比 A100 高 4.3x，功耗降低 62%。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>带宽瓶颈本质</strong>：LLM 解码是内存密集型（memory-bound），每生成 1 token 需要从 DRAM 读取完整 KV Cache；128k 上下文下 KV Cache 达数十 GB</li>
+        <li><strong>稀疏注意力的困境</strong>：算法侧已证明 70%+ 的注意力权重接近 0，但 GPU 不支持高效稀疏内存访问，实际加速不足 1.5x</li>
+        <li><strong>硬件机会</strong>：ASIC 专用设计可原生支持稀疏地址生成和不规则访存，消除 GPU 的通用性开销</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>Salca 硬件架构</strong>：</p>
+      <ul>
+        <li><strong>稀疏 KV 访问引擎</strong>：专用 DMA 控制器支持列稀疏 KV 地址模式（由稀疏掩码驱动），避免 gather/scatter 的额外开销</li>
+        <li><strong>双缓冲预取</strong>：预测下一时间步的稀疏 Pattern，提前预取 KV 数据，隐藏 DRAM 延迟</li>
+        <li><strong>软硬件协同</strong>：配套在线稀疏预测算法直接输出 Salca 原生地址格式（4-bit 列索引编码），零格式转换开销</li>
+      </ul>
+      <div class="formula-block">
+        <code>
+          稀疏 KV 访问模式：<br>
+          对每个 query q_i，选择 Top-K KV 对（K = n × sparsity）<br>
+          Salca 地址生成：addr(k_j) = base + j × stride，j ∈ sparse_mask<br>
+          <br>
+          吞吐量公式：Throughput = BW / (K × d_head × bytes_per_elem)<br>
+          K 减少 80% → 吞吐量近线性提升
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>吞吐量</strong>：128k 上下文，Llama-3-70B 解码，Salca vs. A100 = 4.3x（1840 token/s vs. 428 token/s）</li>
+        <li><strong>功耗</strong>：62% 降低（Salca 45W vs. A100 SXM 400W at same throughput）</li>
+        <li><strong>面积</strong>：28nm 工艺 28mm²，成本大幅低于 GPU</li>
+        <li><strong>生成质量</strong>：稀疏率 80%，RULER 长文档评估 99.1% vs. 全注意力基线</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首个专为稀疏 LLM 注意力解码设计的 ASIC 加速器 Salca</li>
+        <li>软硬件协同稀疏预测-执行流水线，零格式转换开销</li>
+        <li>双缓冲预取完全隐藏 DRAM 访问延迟</li>
+        <li>在 28nm 工艺实现 4.3x vs. A100 的吞吐量，能效比 GPU 高 10x+</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>ASIC 设计固化，无法适应未来 Transformer 架构变化（如 MLA、GQA 等）</li>
+        <li>仅覆盖解码阶段，预填充（Prefill）阶段仍需 GPU/NPU 协作</li>
+        <li>批量推理（Batch > 1）效益下降，适合单请求低延迟场景</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

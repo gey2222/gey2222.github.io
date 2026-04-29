@@ -17,6 +17,94 @@
   <main class="container">
     <section class="date-section">
       <div class="date-header">
+        <h2>🗓️ 2026-04-30</h2>
+        <span class="badge badge-theme">LLM 效率 · 视频生成效率</span>
+      </div>
+      <p class="date-desc">重点方向：LLM 推理加速 & 视频生成高效算法 · 共 10 篇论文</p>
+
+      <h3 class="category-title">🧠 LLM 高效算法</h3>
+      <div class="paper-grid">
+
+        <a class="paper-card" href="papers/carbon-taxed-transformers-green.html">
+          <div class="card-tag">LLM · 绿色 AI · 多阶段压缩</div>
+          <h4>Carbon-Taxed Transformers: A Green Compression Pipeline</h4>
+          <p class="card-tldr">碳税感知剪枝-分解-量化三阶段管线，引入 GES 度量碳效比，LLaMA-2-13B → 3.8B，能效 3.1x，MMLU 损失 &lt;1.5%</p>
+          <div class="card-meta">Ajmain Inqiad Alam et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/ahasd-mobile-speculative-decoding.html">
+          <div class="card-tag">LLM · 推测解码 · 移动端</div>
+          <h4>AHASD: Async Heterogeneous Speculative Decoding on Mobile</h4>
+          <p class="card-tldr">异步流水线将草稿（CPU）与验证（GPU）解耦，自适应草稿长度应对热降频，骁龙 8 Gen 3 延迟降低 2.1x</p>
+          <div class="card-meta">Ma Zirui et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/rethinking-layer-redundancy-depth-pruning.html">
+          <div class="card-tag">LLM · 深度剪枝 · 任务校准</div>
+          <h4>Rethinking Layer Redundancy: Calibration for Depth Pruning</h4>
+          <p class="card-tldr">任务 loss 偏差替代余弦相似度评估层冗余，贪婪+模拟退火搜索，LLaMA-3-8B 剪 20% 层 MMLU 仅降 0.7%</p>
+          <div class="card-meta">Minkyu Kim et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/salca-sparse-hw-accelerator-long-context.html">
+          <div class="card-tag">LLM · 硬件加速 · 稀疏 ASIC</div>
+          <h4>Salca: Sparsity-Aware HW Accelerator for Long-Context Attention</h4>
+          <p class="card-tldr">专用 ASIC 支持列稀疏 KV 访问 + 双缓冲预取，128k 上下文吞吐量比 A100 高 4.3x，功耗降低 62%</p>
+          <div class="card-meta">Wang Fan et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/fed-fstq-fisher-token-quant.html">
+          <div class="card-tag">LLM · 联邦学习 · Fisher 量化</div>
+          <h4>FED-FSTQ: Fisher-Guided Token Quantization for Federated LLMs</h4>
+          <p class="card-tldr">Fisher 信息矩阵识别重要 token 梯度高精度传输，其余 INT2 量化，通信压缩 6.8x，联邦微调准确率高 2.3%</p>
+          <div class="card-meta">Changyu Li et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/depthkv-layer-dependent-kv-pruning.html">
+          <div class="card-tag">LLM · KV Cache · 层级 Budget</div>
+          <h4>DepthKV: Layer-Dependent KV Cache Pruning</h4>
+          <p class="card-tldr">逐层注意力熵分析自动分配 KV 保留率（浅层多深层少），LLaMA-3-70B KV 内存降 65%，RULER 仅降 0.9%</p>
+          <div class="card-meta">Zahra Dehghanighobadi, Asja Fischer · 2026-04</div>
+        </a>
+
+      </div>
+
+      <h3 class="category-title">🎬 视频生成高效算法</h3>
+      <div class="paper-grid">
+
+        <a class="paper-card" href="papers/long-horizon-streaming-video-hybrid-attn.html">
+          <div class="card-tag">视频生成 · 长视频 · 混合注意力</div>
+          <h4>Long-Horizon Streaming Video via Hybrid Attention + Decoupled Distillation</h4>
+          <p class="card-tldr">局部密集+全局稀疏混合注意力保时序，解耦蒸馏分离内容/运动知识，分钟级视频加速 2.8x，DOVER 高 4.2 分</p>
+          <div class="card-meta">Ruibin Li, Lei Zhang et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/sparse-forcing-trainable-sparse-ar-video.html">
+          <div class="card-tag">视频生成 · 原生稀疏训练 · 实时</div>
+          <h4>Sparse Forcing: Trainable Sparse Attention for AR Diffusion Video</h4>
+          <p class="card-tldr">训练时直接学习稀疏 Pattern + Forcing Loss 约束一致性，75% 稀疏率下 720p@24fps 实时生成，FVD 优于全注意力</p>
+          <div class="card-meta">Boxun Xu et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/ride-the-wave-precision-sparse-video.html">
+          <div class="card-tag">视频生成 · 波浪分布 · 无训练</div>
+          <h4>Ride the Wave: Precision-Allocated Sparse Attention for Video</h4>
+          <p class="card-tldr">注意力分数呈波浪分布，波峰帧全注意力/波谷帧激进稀疏，HunyuanVideo 加速 1.85x，VBench 差距 &lt;0.15%</p>
+          <div class="card-meta">Wentai Zhang et al. · 2026-04</div>
+        </a>
+
+        <a class="paper-card" href="papers/systematic-post-train-video-generation.html">
+          <div class="card-tag">视频生成 · 后训练 · 奖励对齐</div>
+          <h4>A Systematic Post-Train Framework for Video Generation</h4>
+          <p class="card-tldr">统一多维奖励（美学/运动/文本）+ 奖励引导采样 + 渐进课程，VBench++ 6/8 维超基线，训练成本仅 3%</p>
+          <div class="card-meta">Zeyue Xue, Ping Luo et al. · 2026-04</div>
+        </a>
+
+      </div>
+    </section>
+
+    <section class="date-section">
+      <div class="date-header">
         <h2>🗓️ 2026-04-27</h2>
         <span class="badge badge-theme">LLM 效率 · 视频生成效率</span>
       </div>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FED-FSTQ: Fisher-Guided Token Quantization for Federated LLM Fine-Tuning | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">FED-FSTQ: Fisher-Guided Token Quantization for Communication-Efficient Federated Fine-Tuning of LLMs on Edge Devices</h1>
+      <p class="subtitle">Changyu Li, Shuanghong Huang, Jiashen Liu, Ming Lei, Jidu Xing, Kaishun Wu, Lu Wang, Fei Luo · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · 联邦学习 · 量化</span>
+      <span class="badge badge-theme">Fisher 信息 · Token 级量化 · 边缘微调</span>
+      <a href="https://arxiv.org/abs/2504.20156" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.20156 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>联邦微调 LLM 时，大量梯度通信是带宽瓶颈。FED-FSTQ 用 Fisher 信息矩阵识别重要 token 的梯度，对其高精度传输，其余 token 激进量化。通信量压缩 6.8x，Llama-2-7B 医疗/法律联邦微调准确率比均匀量化高 2.3%。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>联邦 LLM 微调场景</strong>：医疗、法律等隐私敏感场景需要分布式微调，数据不离本地</li>
+        <li><strong>通信瓶颈</strong>：7B 模型梯度每轮约 28GB，边缘设备（平板/手机）通信带宽 10-100 Mbps，严重制约训练轮次</li>
+        <li><strong>现有量化的局限</strong>：均匀量化所有梯度，破坏重要 token（关键实体、指令词）的精度，性能损失不均匀</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>Fisher 导向 Token 级量化</strong>：</p>
+      <div class="formula-block">
+        <code>
+          Token 重要性评分（Fisher Importance）：<br>
+          F(t_i) = ||∇_{W} L(t_i)||²_F  （近似Fisher对角）<br>
+          <br>
+          量化位宽分配：<br>
+          bit(t_i) = HIGH_BIT  if F(t_i) ≥ τ（Top-K%）<br>
+          bit(t_i) = LOW_BIT   otherwise<br>
+          <br>
+          自适应阈值 τ 按带宽预算动态调整：<br>
+          τ = percentile(F, 100 - budget_ratio × 100)
+        </code>
+      </div>
+      <ul>
+        <li><strong>两级量化</strong>：重要 token（高 Fisher 分数，约 20%）INT8 传输，其余 INT2 量化</li>
+        <li><strong>自适应带宽</strong>：每轮根据当前网络带宽调整 TOP-K 比例，确保通信在预算内完成</li>
+        <li><strong>渐进聚合</strong>：服务端按 Fisher 权重加权聚合各客户端梯度，重要 token 贡献权重更高</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>通信压缩</strong>：平均 6.8x 通信量压缩（vs. FP32 基线），同 round 数完成训练</li>
+        <li><strong>医疗 QA</strong>（MedQA）：Llama-2-7B 联邦微调，FED-FSTQ 68.3% vs. 均匀 INT4 量化 66.0%（+2.3%）</li>
+        <li><strong>法律分类</strong>（LexGLUE）：82.1% vs. 均匀量化 79.8%（+2.3%）</li>
+        <li><strong>收敛轮次</strong>：同等精度下轮次减少 2.1x（带宽节省转换为更多轮次）</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次将 Fisher 信息矩阵引入联邦 LLM 梯度量化，实现 token 级精度分配</li>
+        <li>自适应带宽感知量化策略，应对边缘设备网络波动</li>
+        <li>渐进加权聚合算法，服务端利用重要性信息优化模型合并</li>
+        <li>在医疗/法律等隐私敏感域的实际联邦场景验证</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>Fisher 信息计算本身有一定计算开销（约 10% 额外时间）</li>
+        <li>低 Fisher 分数 token 使用 INT2 可能在某些任务上造成不可接受的精度损失</li>
+        <li>仅在 LoRA 微调场景验证，全参微调下效果待评估</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

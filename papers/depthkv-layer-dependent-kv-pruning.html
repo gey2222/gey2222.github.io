@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DepthKV: Layer-Dependent KV Cache Pruning | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">DepthKV: Layer-Dependent KV Cache Pruning for Long-Context LLM Inference</h1>
+      <p class="subtitle">Zahra Dehghanighobadi, Asja Fischer · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · KV Cache · 层级剪枝</span>
+      <span class="badge badge-theme">长上下文 · 自适应 Budget · 注意力熵</span>
+      <a href="https://arxiv.org/abs/2504.19612" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.19612 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>不同 Transformer 层对 KV Cache 大小的敏感度差异很大——浅层需保留更多 token，深层可激进压缩。DepthKV 通过逐层注意力熵分析自动分配各层 KV 保留率，LLaMA-3-70B 128k 上下文 KV 内存降 65%，RULER 性能仅降 0.9%（SnapKV 降 2.1%）。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>统一 Budget 的问题</strong>：H2O、SnapKV 等方法给所有层分配相同 KV 保留率，忽视层间差异</li>
+        <li><strong>层间差异的证据</strong>：研究发现浅层（1-12层）注意力分散（高熵），需要保留更多上下文；深层（25-32层）注意力集中（低熵），只需少量关键 token</li>
+        <li><strong>直觉</strong>：浅层做语法/局部特征提取，深层做语义/任务推理，两者所需 KV 量截然不同</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>层依赖 KV Budget 分配</strong>：</p>
+      <div class="formula-block">
+        <code>
+          注意力熵估计（各层）：<br>
+          H_l = -Σ_i Σ_j a_{ij}^l · log(a_{ij}^l)   （在校准集上平均）<br>
+          <br>
+          层级 Budget 分配：<br>
+          B_l = B_total × softmax(H / T)[l]<br>
+          其中 T 为温度超参，控制 Budget 分配的均匀程度<br>
+          <br>
+          高熵层（浅层）→ 高 B_l（保留更多 KV）<br>
+          低熵层（深层）→ 低 B_l（激进剪枝）
+        </code>
+      </div>
+      <ul>
+        <li><strong>校准集需求低</strong>：仅需 64 条样本估计各层注意力熵，5 分钟完成</li>
+        <li><strong>与现有 KV 选择方法正交</strong>：Budget 分配后，各层内部 KV token 选择仍用 H2O/SnapKV 等方法</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>内存</strong>：LLaMA-3-70B 128k，KV Cache 从 143GB 降至 50GB（-65%）</li>
+        <li><strong>RULER 长文档评估</strong>：DepthKV+H2O 平均分 82.3，同等 Budget 下 H2O 81.4（-0.9% vs. baseline），SnapKV 80.2（-2.1%）</li>
+        <li><strong>LongBench</strong>：平均分 56.8 vs. 全 KV 57.4（-1%），优于 SnapKV（54.9）</li>
+        <li><strong>PASSKEY 检索</strong>：100% 准确率（vs. H2O 均匀 Budget 的 97.3%）</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>系统量化不同层对 KV Cache 大小的敏感度差异，提供理论和实证支持</li>
+        <li>提出基于注意力熵的层级 Budget 自动分配算法，仅需 64 条样本校准</li>
+        <li>方法与现有 KV 选择策略正交可叠加，即插即用</li>
+        <li>在多个长文档 benchmark 上创新 SOTA（同等 Budget 条件下）</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>注意力熵估计依赖校准集分布，分布外任务可能熵分布不同</li>
+        <li>温度超参 T 需要针对不同模型调整，增加部署复杂度</li>
+        <li>MLA（Multi-Latent Attention）等新注意力变体下的适用性未验证</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

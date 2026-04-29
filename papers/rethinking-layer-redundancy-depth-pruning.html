@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rethinking Layer Redundancy: Calibration for Depth Pruning | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">Rethinking Layer Redundancy in Large Language Models: Calibration Objectives and Search for Depth Pruning</h1>
+      <p class="subtitle">Minkyu Kim, Vincent-Daniel Yun, Youngrae Kim, Youngjin Heo, Suin Cho, Seong-hun Kim, Woosang Lim, Gaeul Kwon · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · 深度剪枝 · 模型压缩</span>
+      <span class="badge badge-theme">校准目标 · 贪婪搜索 · 推理加速</span>
+      <a href="https://arxiv.org/abs/2504.19550" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.19550 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>现有深度剪枝用层间激活相似度（余弦距离）评估冗余度，但这个指标与任务性能脱节。本文重新定义校准目标：用任务相关输出偏差评估层的重要性，结合贪婪搜索找到最优剪枝层集合。LLaMA-3-8B 剪去 20% 层，MMLU 仅降 0.7%（基线降 3.2%）。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>深度剪枝吸引力</strong>：整层删除可线性降低推理延迟，比宽度剪枝更硬件友好</li>
+        <li><strong>现有方法缺陷</strong>：ShortGPT、LaCo 等使用层间余弦相似度或块重要性分数，这些指标只反映激活相似性，不代表任务贡献</li>
+        <li><strong>核心问题</strong>：相邻层激活相似但都对最终输出有贡献时，会被错误剪掉</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>重定义层重要性</strong>：</p>
+      <div class="formula-block">
+        <code>
+          传统指标：I_cos(l) = 1 - cosine(h_l, h_{l+1})<br>
+          <br>
+          本文提出 Task-Calibrated Importance (TCI)：<br>
+          TCI(l) = E_{x~D_task}[|L(M, x) - L(M\{l}, x)|]<br>
+          其中 D_task 为下游任务校准数据集，L 为任务 loss<br>
+          <br>
+          搜索算法：贪婪移除 + 模拟退火验证<br>
+          每步移除 TCI 最小的层，退火接受低 TCI 层的组合
+        </code>
+      </div>
+      <ul>
+        <li><strong>任务导向校准集</strong>：从目标下游任务（如代码/推理/对话）采样少量样本（128条）构建校准数据</li>
+        <li><strong>贪婪+模拟退火搜索</strong>：贪婪确保每步局部最优，退火跳出局部极值，找到全局近似最优剪枝层集合</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>LLaMA-3-8B</strong>：剪去 6 层（20%），MMLU 74.1 → 73.6（-0.7%）；ShortGPT 同等压缩 MMLU 降 3.2%</li>
+        <li><strong>代码任务</strong>：HumanEval pass@1 从 64.5% 降至 63.8%（-0.7%），ShortGPT 降至 58.3%</li>
+        <li><strong>推理速度</strong>：A100 单卡 batch=1 吞吐量提升 1.6x，延迟降低 37%</li>
+        <li><strong>搜索成本</strong>：128 条校准样本上搜索全程 < 10 分钟（A100）</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>揭示"激活相似度 ≠ 层冗余度"的本质问题，提出 TCI 指标</li>
+        <li>设计任务导向校准数据集选择策略，少样本高效校准</li>
+        <li>贪婪+模拟退火搜索在 10 分钟内找到优于穷举的剪枝方案</li>
+        <li>在 LLaMA-2/3、Mistral、Qwen 系列验证通用性</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>TCI 计算依赖下游任务样本，通用模型需要多任务联合校准，代价增加</li>
+        <li>仅考虑整层删除，未探索层内部分删除（头级、FFN 子块级）</li>
+        <li>剪枝后无恢复微调步骤，大压缩率下精度仍有缺口</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

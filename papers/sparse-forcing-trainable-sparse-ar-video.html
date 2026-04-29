@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sparse Forcing: Trainable Sparse Attention for AR Diffusion Video | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">Sparse Forcing: Native Trainable Sparse Attention for Real-time Autoregressive Diffusion Video Generation</h1>
+      <p class="subtitle">Boxun Xu, Yuming Du, Zichang Liu, Siyu Yang, Ziyang Jiang, Siqi Yan, Rajasi Saha, Albert Pumarola, Wenchen Wang, Peng Li · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-video">视频生成 · 稀疏注意力 · 自回归扩散</span>
+      <span class="badge badge-theme">原生可训练 · 实时生成 · Forcing Loss</span>
+      <a href="https://arxiv.org/abs/2504.16204" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.16204 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>现有视频生成稀疏注意力都是后训练修剪，导致 Pattern 不一致。Sparse Forcing 在训练时直接学习稀疏 Pattern，引入 Forcing Loss 约束稀疏与密集注意力一致性。75% 稀疏率下实现 720p@24fps 实时生成（单 H100），FVD 比 Wan2.1 全注意力更低（更好）。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>自回归扩散视频模型（AR-DiT）</strong>：每次生成下一 chunk 时运行多步扩散，计算量极大</li>
+        <li><strong>后训练稀疏的局限</strong>：剪枝得到的稀疏 Pattern 在训练时未被优化，推理时与预期注意力分布不一致，累积误差严重</li>
+        <li><strong>原生稀疏的机会</strong>：训练时直接以稀疏注意力替代全注意力，模型学会"用稀疏表达"</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>可微稀疏 Mask 学习</strong>：</p>
+      <div class="formula-block">
+        <code>
+          稀疏 mask 参数化（可微 Top-K）：<br>
+          M = StraightThroughEstimator(TopK(S, K))<br>
+          其中 S 为可学习重要性分数矩阵<br>
+          <br>
+          Sparse Forcing Loss：<br>
+          L_forcing = ||A_sparse - sg(A_dense)||²_F<br>
+          其中 sg 为 stop-gradient，防止密集注意力退化<br>
+          <br>
+          最终训练目标：<br>
+          L = L_diffusion + λ · L_forcing
+        </code>
+      </div>
+      <ul>
+        <li><strong>AR 帧间稀疏复用</strong>：相邻扩散步骤的稀疏 mask 共享（运动连续性保证 mask 变化小），进一步减少 mask 计算开销</li>
+        <li><strong>分层稀疏率</strong>：浅层 50% 稀疏，深层 80% 稀疏（与 DepthKV 逻辑一致）</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>实时性</strong>：720p @ 24fps，单 H100，首帧延迟 0.28s ✅ 真正实时</li>
+        <li><strong>FVD</strong>：Sparse Forcing（75% 稀疏）= 142 vs. Wan2.1 全注意力 = 156（低更好，<strong>+9%</strong>）</li>
+        <li><strong>VBench 综合</strong>：85.3 vs. 全注意力 84.7（反超！稀疏约束起到正则化效果）</li>
+        <li><strong>推理速度</strong>：3.8x vs. 全注意力基线，4.1x vs. 后训练稀疏方案（后者精度更差）</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次提出原生可训练稀疏注意力用于 AR 扩散视频生成，非后训练修剪</li>
+        <li>设计 Forcing Loss，约束稀疏注意力与密集注意力的输出一致性</li>
+        <li>AR 帧间稀疏 mask 复用，进一步减少 mask 计算开销</li>
+        <li>实现真正实时视频生成（720p@24fps），并在质量上超越全注意力基线</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>训练时需要同时维护密集注意力（用于 Forcing Loss），训练显存需求增加 1.5x</li>
+        <li>极端场景（快速镜头切换）帧间 mask 复用假设失效，需要检测机制</li>
+        <li>仅在 AR 扩散范式验证，标准 DiT（非 AR）是否适用未测试</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>

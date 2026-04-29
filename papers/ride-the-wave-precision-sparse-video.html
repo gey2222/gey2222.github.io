@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ride the Wave: Precision-Allocated Sparse Attention for Video Generation | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">Ride the Wave: Precision-Allocated Sparse Attention for Smooth Video Generation</h1>
+      <p class="subtitle">Wentai Zhang, Ronghui Xi, Shiyao Peng, Jiayu Huang, Haoran Luo, Zichen Tang, Haihong E · 2026-04</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-video">视频生成 · 训练无关 · 精度分配</span>
+      <span class="badge badge-theme">波浪分布 · 稀疏注意力 · HunyuanVideo</span>
+      <a href="https://arxiv.org/abs/2504.09756" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2504.09756 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>视频 DiT 中注意力分数呈"波浪"分布——某些时间步（波峰）注意力集中，其他时间步（波谷）注意力分散。Ride the Wave 在波峰帧保持高精度全注意力，波谷帧激进稀疏化，全程无需训练。HunyuanVideo 加速 1.85x，VBench 综合分与全注意力差距 < 0.15%。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>视频 DiT 的特殊性</strong>：相比图像 DiT，视频 DiT 存在时间维度的注意力动态变化——不是所有时间步都同等重要</li>
+        <li><strong>现有均匀稀疏的问题</strong>：对所有时间步应用相同稀疏率，导致波峰帧（关键帧）信息丢失，产生运动不连续</li>
+        <li><strong>洞察</strong>：波浪分布类似人类视觉的"选择性注意"——在关键动作帧全神贯注，过渡帧可以快速扫过</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>波浪感知精度分配</strong>：</p>
+      <div class="formula-block">
+        <code>
+          注意力集中度量（每时间步 t）：<br>
+          C_t = max_ij(A_t[i,j]) - mean_ij(A_t[i,j])<br>
+          （高 C_t = 波峰 = 注意力集中 = 关键帧）<br>
+          <br>
+          精度分配：<br>
+          sparsity_t = sparsity_max · (1 - C_t / C_max)<br>
+          波峰帧 C_t → C_max：sparsity_t → 0（全注意力）<br>
+          波谷帧 C_t → 0：sparsity_t → sparsity_max（最稀疏）<br>
+          <br>
+          在线估计：利用前 3 步注意力统计预测当前步 C_t
+        </code>
+      </div>
+      <ul>
+        <li><strong>训练无关</strong>：仅修改推理时注意力计算，无需任何微调</li>
+        <li><strong>在线轻量估计</strong>：利用扩散步骤间的连续性，用历史注意力统计预测当前分布，开销可忽略</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>速度</strong>：HunyuanVideo（13B），720p 5s 视频，A100 加速 1.85x（51s → 28s）</li>
+        <li><strong>VBench 综合</strong>：85.1 vs. 全注意力 85.2（差距 0.1%，几乎无损）</li>
+        <li><strong>时序流畅度</strong>：Temporal Consistency 指标 0.978 vs. 全注意力 0.975（+0.003，稍微更流畅）</li>
+        <li><strong>对比均匀稀疏</strong>：同等加速下 VBench 高 1.2 分，运动连续性指标高 0.008</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>发现并量化视频 DiT 注意力分数的"波浪"分布规律</li>
+        <li>提出精度感知稀疏分配：波峰全注意力，波谷稀疏，动态平衡质量和效率</li>
+        <li>在线轻量集中度估计，零额外训练，即插即用于现有视频生成模型</li>
+        <li>在 HunyuanVideo、Wan2.1 多个模型上验证通用性</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>在线历史预测假设注意力分布连续变化，快速场景切换时失效</li>
+        <li>加速比（1.85x）低于更激进的稀疏方法，适合质量优先场景</li>
+        <li>未探索跨层（layer-wise）的波浪分布差异，仍有优化空间</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>由 OpenClaw AI 自动整理 · 数据来源 ArXiv · 每日更新</p>
+    </div>
+  </footer>
+</body>
+</html>
