@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EMO: Emergent Modularity in MoE | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">EMO: Emergent Modularity in MoE</h1>
+      <p class="subtitle">Ryan Wang et al. · 2026-05</p>
+    </div>
+  </header>
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">MoE · 模块化专家</span>
+      <span class="badge badge-theme">专家组合 · 稀疏模型</span>
+      <a href="https://arxiv.org/abs/2605.06663" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2605.06663 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>EMO 是一种具备涌现模块化能力的 MoE 架构，无需人工定义先验即可使专家子集独立使用和自由组合。通过限制同一文档内 token 只从共享专家池中选取，不同文档使用不同专家子集，实现了语义级专家特化。1B-active / 14B-total 规模预训练后，仅保留 25% 专家时性能仅下降 1%，而标准 MoE 在相同设置下会完全崩溃。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>专家耦合问题</strong>：标准 MoE 模型中，各专家在训练过程中形成高度依赖，无法独立抽取或组合使用，限制了模型的灵活部署</li>
+        <li><strong>模块化缺失</strong>：现有 MoE 缺乏结构化的模块化能力，裁减专家子集往往导致性能急剧崩溃</li>
+        <li><strong>人工先验依赖</strong>：已有尝试实现专家模块化的方案通常依赖人工定义的领域划分或额外监督信号，扩展性差</li>
+        <li><strong>组合泛化需求</strong>：实际应用中希望按需组合不同领域的专家子集（如数学 + 代码），现有架构无法支持</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>1. 文档级共享专家池约束：</strong></p>
+      <div class="formula-block">
+        <code>
+对于文档 d 中的所有 token t_i：
+  Expert(t_i) ∈ Pool(d)  // 同一文档内 token 共享同一专家子集
+  Pool(d) ⊆ E_global      // 子集来自全局共享专家池
+
+不同文档 d ≠ d' 可选择不同子集：
+  Pool(d) ≠ Pool(d')      // 涌现文档级路由多样性
+        </code>
+      </div>
+      <p><strong>2. 无监督模块化涌现：</strong>不依赖任何人工标注领域标签，专家子集在训练过程中自然特化到数学、代码等语义领域，通过路由统计分析可验证专家的语义专属性。</p>
+      <p><strong>3. 规模验证：</strong>以 1B active 参数、14B total 参数规模在 1T token 数据上完整预训练，验证了方法在实用规模下的可行性和专家模块化程度。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>专家裁减鲁棒性（保留 25%）</strong>：EMO 仅下降 1% 绝对性能，标准 MoE 性能完全崩溃</li>
+        <li><strong>专家裁减鲁棒性（保留 12.5%）</strong>：EMO 仅下降 3% 绝对性能，展现出极强的模块化容错能力</li>
+        <li><strong>专家语义特化</strong>：数学相关专家子集在数学 benchmark 上独立性能显著优于随机子集</li>
+        <li><strong>代码领域特化</strong>：代码相关专家子集在编程任务上同样展现出领域专属能力</li>
+        <li><strong>组合能力</strong>：将数学专家子集与代码专家子集组合后，在混合任务上性能接近全量专家</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>提出文档级专家池约束机制，无需人工监督即可涌现模块化专家结构</li>
+        <li>首次证明 MoE 专家子集可在语义层面（数学、代码）自发形成功能分化</li>
+        <li>在 1B/14B 规模验证了大幅裁减专家（保留 12.5%）仅导致微小性能损失</li>
+        <li>为按需组合专家子集的模块化 LLM 部署提供了实践路径</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>文档级池约束可能增加路由算法复杂度，在超长文档或跨文档任务上的行为尚待研究</li>
+        <li>仅在 1T token 预训练规模验证，更大规模（如 10T+ token）下的模块化涌现程度未知</li>
+        <li>不同专家子集组合的最优策略尚无系统化的自动搜索方法</li>
+        <li>与现有 MoE 基础设施的工程兼容性需要进一步验证</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

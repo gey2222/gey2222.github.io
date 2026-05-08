@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LatentRAG: Latent-Space Reasoning for Efficient Agentic RAG | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">LatentRAG: Latent-Space Reasoning for Efficient Agentic RAG</h1>
+      <p class="subtitle">NLP / Efficiency Research Group · 2026-05</p>
+    </div>
+  </header>
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">RAG · 潜空间推理</span>
+      <span class="badge badge-theme">智能体 · 多跳问答</span>
+      <a href="https://arxiv.org/abs/2605.06285" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2605.06285 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>LatentRAG 将检索与推理统一到共享的连续潜空间中，通过双编码器 + 交叉注意力融合将检索段落表示直接注入模型推理状态，彻底消除了迭代 RAG 中各轮检索之间的 token 生成往返开销。多跳 QA 任务延迟降低 90%，LLM 调用次数减少 4.2x，同时保持与迭代 RAG 相当的准确率。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>迭代 RAG 延迟瓶颈</strong>：标准迭代 RAG 在每轮检索后需要完整生成 token 序列作为下一轮检索的查询，每次 LLM 调用都引入完整的前向传播延迟</li>
+        <li><strong>多跳推理的级联开销</strong>：多跳 QA 需要多轮检索，迭代方式导致延迟与跳数线性增长</li>
+        <li><strong>检索-生成语义不匹配</strong>：token 级接口限制了检索段落与模型内部推理状态的深度融合</li>
+        <li><strong>智能体 RAG 效率</strong>：在长链条智能体工作流中，RAG 的调用延迟成为整体系统的主要瓶颈</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>1. 双编码器潜空间统一：</strong></p>
+      <div class="formula-block">
+        <code>
+// 查询编码器：将当前推理状态映射到检索空间
+h_q = QueryEncoder(reasoning_state)
+
+// 段落编码器：将检索段落映射到同一潜空间
+h_p = PassageEncoder(retrieved_passage)
+
+// 相似度检索
+scores = sim(h_q, h_p)  // 余弦或点积
+        </code>
+      </div>
+      <p><strong>2. 交叉注意力融合：</strong>将检索段落的表示向量直接通过交叉注意力层注入模型的推理状态，无需将段落解码为 token 序列再重新编码，实现零往返延迟的检索融合。</p>
+      <div class="formula-block">
+        <code>
+// 交叉注意力融合（无 token 往返）
+new_state = CrossAttention(
+  query=reasoning_state,
+  key=h_p,
+  value=h_p
+)
+// 直接更新推理状态，进入下一跳检索
+        </code>
+      </div>
+      <p><strong>3. 端到端联合训练：</strong>检索器和推理模型联合训练，对齐潜空间表示，确保融合后推理状态质量。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>多跳 QA 延迟</strong>：vs 迭代 RAG 基线降低 90%</li>
+        <li><strong>LLM 调用次数</strong>：减少 4.2x（多跳推理中无需每跳调用完整 LLM 生成中间 token）</li>
+        <li><strong>准确率</strong>：在 HotpotQA、MuSiQue 等多跳 QA benchmark 上与迭代 RAG 持平</li>
+        <li><strong>智能体工作流</strong>：在长链条智能体任务中整体系统延迟显著降低</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次将检索与推理统一在连续潜空间，消除 token 往返延迟</li>
+        <li>双编码器 + 交叉注意力融合实现零开销的多跳检索状态更新</li>
+        <li>在保持准确率的前提下将多跳 QA 延迟降低 90%</li>
+        <li>为智能体 RAG 工作流提供了高效的系统设计范式</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>需要端到端联合训练，与现有预训练 LLM 的即插即用集成较复杂</li>
+        <li>潜空间融合可能损失部分原始段落的细粒度文本信息</li>
+        <li>双编码器的训练数据需要多跳推理路径监督信号，标注成本较高</li>
+        <li>在开放域单跳检索场景下的收益相对有限</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

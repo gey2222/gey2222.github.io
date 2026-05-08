@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LiteSpark: Ternary LLM Inference on CPU | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">LiteSpark: Ternary LLM Inference on CPU</h1>
+      <p class="subtitle">Tencent / Edge AI Team · 2026-05</p>
+    </div>
+  </header>
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">三值量化 · CPU 推理</span>
+      <span class="badge badge-theme">边缘部署 · SIMD 加速</span>
+      <a href="https://arxiv.org/abs/2605.06485" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2605.06485 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>LiteSpark 是腾讯/边缘 AI 团队开发的三值量化 LLM CPU 推理框架，专为权重仅为 {-1, 0, +1} 的 LLM 设计。通过 SIMD 优化的三值矩阵乘内核、缓存友好内存布局和流水线并行，在无 GPU 的商品化 CPU 上实现首 token 时延降低 9.2x、吞吐量提升 52x（vs FP16），真正落地边缘设备 LLM 部署。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>三值量化的理论优势</strong>：权重仅 {-1, 0, +1} 可将乘法退化为加减操作，理论计算节省极大，但现有推理框架未能有效利用</li>
+        <li><strong>GPU 依赖限制</strong>：主流 LLM 推理严重依赖 GPU，边缘设备（手机、嵌入式系统）部署面临硬件门槛</li>
+        <li><strong>CPU 三值内核缺失</strong>：llama.cpp 等现有 CPU 推理框架对二值/三值量化的 SIMD 优化支持不足，无法发挥三值量化的全部潜力</li>
+        <li><strong>内存带宽瓶颈</strong>：CPU 推理的主要瓶颈是内存访问，三值量化可大幅压缩权重体积，但需要专门的内存布局优化</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>1. SIMD 优化三值矩阵乘内核：</strong></p>
+      <div class="formula-block">
+        <code>
+// 三值权重编码：w ∈ {-1, 0, +1}
+// 用两位 bit-pack：(pos_mask, neg_mask)
+// pos_mask[i] = 1 iff w[i] = +1
+// neg_mask[i] = 1 iff w[i] = -1
+
+// SIMD 三值矩阵乘（AVX2/NEON 实现）
+output = POPCNT(x & pos_mask) - POPCNT(x & neg_mask)
+
+// 避免浮点乘法，仅用位运算 + 计数
+        </code>
+      </div>
+      <p><strong>2. 缓存友好内存布局：</strong>将三值权重按行主序打包存储，确保矩阵乘时 L1/L2 cache 命中率最优；激活值采用列主序以匹配 SIMD 向量化方向。</p>
+      <p><strong>3. 解码阶段流水线并行：</strong>将注意力计算与前馈网络执行在不同 CPU 核上异步流水，掩盖内存加载延迟，提升解码吞吐量。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>首 Token 时延（TTFT）</strong>：vs FP16 CPU 基线降低 9.2x</li>
+        <li><strong>解码吞吐量</strong>：vs FP16 CPU 基线提升 52x</li>
+        <li><strong>内存占用</strong>：三值量化将模型权重压缩至 FP16 的约 1/10，使大模型可在 RAM 受限设备运行</li>
+        <li><strong>边缘设备验证</strong>：在无 GPU 的商品化 CPU 设备上实现实用级推理速度</li>
+        <li><strong>精度保留</strong>：三值量化在保持模型质量的前提下实现上述加速（具体 perplexity 见论文）</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>设计了首个系统化的三值 LLM CPU 推理框架，填补了三值量化到实际部署的工程空白</li>
+        <li>SIMD 三值矩阵乘内核将乘法完全消除，仅用位运算实现高效计算</li>
+        <li>缓存感知内存布局 + 流水线并行协同解决 CPU 内存带宽瓶颈</li>
+        <li>在无 GPU 设备上实现 52x 吞吐量提升，开创边缘端三值 LLM 实用化先例</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>依赖三值量化预训练模型（如 BitNet 系列），对现有 FP16/BF16 模型需重新训练</li>
+        <li>三值量化在某些精度敏感任务（如长文本生成、数学推理）上的质量损失需仔细评估</li>
+        <li>SIMD 实现依赖特定指令集（AVX2/NEON），需要针对不同 CPU 架构分别优化</li>
+        <li>流水线并行策略在单核设备上无法发挥优势</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

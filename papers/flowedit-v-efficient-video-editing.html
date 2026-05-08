@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlowEdit-V: Efficient Video Editing via Rectified Flow Inversion | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">FlowEdit-V: Efficient Video Editing via Rectified Flow Inversion</h1>
+      <p class="subtitle">Video Generation Research Group · 2026-05</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-theme">视频生成 · 视频编辑 · 整流流</span>
+      <span class="badge badge-theme">无需重训 · 时序一致性 · 3.4x 加速</span>
+      <a href="https://arxiv.org/abs/2605.06142" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2605.06142 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>FlowEdit-V 将图像 FlowEdit 的单步流偏移思路扩展到视频：在单噪声水平计算 source-to-target 流偏移，通过帧间共享偏移 + 滑动窗口保持时序一致性，完全绕开 DDIM 逐步反演链。与 DDIM 编辑方法相比加速 3.4x，时序一致性评分提升 8.2%，支持风格、内容、纹理等多类编辑。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>DDIM 反演的效率问题</strong>：主流视频编辑管线（Prompt-to-Prompt、TokenFlow 等）依赖 DDIM 反演重建噪声轨迹，需 50–100 步前向+反向传播，视频编辑延迟高达分钟级</li>
+        <li><strong>整流流模型的线性特性</strong>：Stable Diffusion 3、CogVideoX 等基于整流流（Rectified Flow/Flow Matching）的模型，去噪轨迹接近直线，理论上可用更少步甚至单步完成反演</li>
+        <li><strong>时序一致性挑战</strong>：视频帧间存在运动，简单将图像编辑逐帧应用会导致闪烁；流偏移需在帧间协调</li>
+        <li><strong>FlowEdit 在图像上的成功</strong>：图像 FlowEdit 证明单步流偏移即可实现高质量编辑，但视频中帧间运动和时序依赖尚未被探索</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>1. 单噪声水平流偏移：</strong></p>
+      <div class="formula-block">
+        <code>
+          传统 DDIM 反演：x_src → x_T → 修改条件 → x_T → x_edit（50-100步）<br>
+          <br>
+          FlowEdit-V：<br>
+          &nbsp;&nbsp;在单一噪声水平 t* 处计算流偏移向量：<br>
+          &nbsp;&nbsp;Δ_flow = v_θ(x_{t*}, c_target) - v_θ(x_{t*}, c_source)<br>
+          &nbsp;&nbsp;其中 v_θ 是流匹配模型的速度场预测<br>
+          <br>
+          &nbsp;&nbsp;编辑结果直接计算：<br>
+          &nbsp;&nbsp;x_edit = x_src + α · Δ_flow<br>
+          &nbsp;&nbsp;α 为编辑强度超参数（通常 0.3–0.7）
+        </code>
+      </div>
+      <p><strong>2. 帧间偏移共享 + 滑动窗口：</strong></p>
+      <div class="formula-block">
+        <code>
+          视频帧 {f_1, ..., f_N} 的时序一致性策略：<br>
+          <br>
+          方案 A - 全局偏移共享：<br>
+          &nbsp;&nbsp;对所有帧共享同一流偏移 Δ_flow（快速但适合全局风格编辑）<br>
+          <br>
+          方案 B - 滑动窗口偏移（默认）：<br>
+          &nbsp;&nbsp;窗口大小 w=8 帧，相邻窗口重叠 50%<br>
+          &nbsp;&nbsp;窗口内共享偏移，窗口间线性插值过渡<br>
+          &nbsp;&nbsp;保留局部运动一致性同时允许场景演变<br>
+          <br>
+          时序正则化损失（可选微调）：<br>
+          &nbsp;&nbsp;L_temporal = ||x_edit[t] - warp(x_edit[t-1], flow_t)||²
+        </code>
+      </div>
+      <p><strong>3. 自适应偏移强度：</strong>基于帧的运动量（光流幅度）动态调整 α，运动激烈的帧使用更小强度以避免伪影。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>推理加速</strong>：相比 DDIM-based 编辑（TokenFlow, Video-P2P），端到端加速 3.4x（同等质量下）</li>
+        <li><strong>时序一致性</strong>：CLIP 帧间余弦相似度提升 8.2%，Warping Error 降低 12%</li>
+        <li><strong>编辑质量</strong>：风格迁移 CLIP-Text Score 与 DDIM 方法持平；内容编辑 DINO-Score 高 3.1 分</li>
+        <li><strong>支持的编辑类型</strong>：全局风格、纹理替换、局部内容修改（基于 mask）、时序一致字幕驱动编辑</li>
+        <li><strong>基础模型兼容性</strong>：在 CogVideoX、Wan2.1、Open-Sora 上均验证有效</li>
+        <li><strong>用户研究</strong>：88% 的用户偏好 FlowEdit-V 结果（vs DDIM 编辑），主要优势是"更自然的运动感"</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次系统地将整流流单步偏移策略应用于视频编辑，大幅降低推理成本</li>
+        <li>提出帧间偏移共享 + 滑动窗口插值机制，解决跨帧时序一致性问题</li>
+        <li>在主流视频生成框架（CogVideoX/Wan2.1/Open-Sora）上实现 3.4x 加速，时序一致性领先</li>
+        <li>提供统一接口支持风格/内容/纹理多类编辑任务，无需针对不同任务重新设计管线</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>单步流偏移假设整流流轨迹足够线性，对低质量基础模型（轨迹弯曲大）效果下降</li>
+        <li>编辑强度 α 对不同内容和视频的最优值不同，需用户手动调节或额外自动化策略</li>
+        <li>对大幅度语义变换（如换背景、换人物）效果弱于基于 inpainting 的方法</li>
+        <li>与 ControlNet 等精细控制工具的集成尚需额外工程工作</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

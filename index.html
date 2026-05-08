@@ -17,6 +17,94 @@
   <main class="container">
     <section class="date-section">
       <div class="date-header">
+        <h2>🗓️ 2026-05-09</h2>
+        <span class="badge badge-theme">LLM 效率 · 视频生成效率</span>
+      </div>
+      <p class="date-desc">重点方向：LLM 推理加速 & 视频生成高效算法 · 共 10 篇论文</p>
+
+      <h3 class="category-title">🧠 LLM 高效算法</h3>
+      <div class="paper-grid">
+
+        <a class="paper-card" href="papers/emo-modular-moe.html">
+          <div class="card-tag">LLM · 模块化 MoE · 内存高效</div>
+          <h4>EMO: Pretraining MoE for Emergent Modularity</h4>
+          <p class="card-tldr">文档域约束路由使 expert 涌现语义专化，仅 25% experts 推理仅损 1%，实现 14B 模型内存高效部署</p>
+          <div class="card-meta">Ryan Wang et al. · 2026-05</div>
+        </a>
+
+        <a class="paper-card" href="papers/popo-positive-only-policy-optimization.html">
+          <div class="card-tag">LLM · RLVR · 高效训练</div>
+          <h4>POPO: Positive-Only Policy Optimization with Implicit Negative Gradients</h4>
+          <p class="card-tldr">纯正样本 RLVR 框架，隐式负梯度自然涌现，Qwen-Math-7B 在 AIME 2025 达 36.67%（GRPO 仅 30%），训练效率大幅提升</p>
+          <div class="card-meta">Hao Fang et al. · 2026-05</div>
+        </a>
+
+        <a class="paper-card" href="papers/litespark-ternary-llm-cpu.html">
+          <div class="card-tag">LLM · 三值量化 · CPU 推理</div>
+          <h4>LiteSpark: Ternary LLM Inference on Consumer CPUs</h4>
+          <p class="card-tldr">SIMD 三值矩阵核替代浮点乘法，Apple Silicon 上 TTFT 加速 9.2x、吞吐量 52x、内存减少 14x，无 GPU 边缘部署</p>
+          <div class="card-meta">Nii Osae Osae Dade et al. · 2026-05</div>
+        </a>
+
+        <a class="paper-card" href="papers/latentrag-latent-space-agentic-rag.html">
+          <div class="card-tag">LLM · RAG · 隐空间推理</div>
+          <h4>LatentRAG: Latent-Space Reasoning for Efficient Agentic RAG</h4>
+          <p class="card-tldr">检索融入连续隐空间，消除迭代 RAG 的 token 往返开销，延迟降低 90%，LLM 调用次数减少 4.2x</p>
+          <div class="card-meta">LatentRAG Team · 2026-05</div>
+        </a>
+
+        <a class="paper-card" href="papers/unisd-self-distillation-llm.html">
+          <div class="card-tag">LLM · 自蒸馏 · 高效对齐</div>
+          <h4>UniSD: Towards a Unified Self-Distillation Framework for LLMs</h4>
+          <p class="card-tldr">整合多教师协同、EMA 稳定、token 级对比学习等机制，无需强外部教师，6 个 benchmark 平均提升 +5.4 分</p>
+          <div class="card-meta">Yiqiao Jin et al. · 2026-05</div>
+        </a>
+
+        <a class="paper-card" href="papers/speckv-adaptive-speculative-decoding.html">
+          <div class="card-tag">LLM · 投机解码 · 量化感知</div>
+          <h4>SpecKV: Adaptive Speculative Decoding with Compression-Aware Gamma Selection</h4>
+          <p class="card-tldr">MLP 控制器根据草稿模型熵/置信度自适应选择 γ，兼顾 FP16/INT8/NF4 三种量化级别，吞吐量提升 56%，开销仅 0.34ms</p>
+          <div class="card-meta">Shikhar Shukla et al. · 2026-05</div>
+        </a>
+
+      </div>
+
+      <h3 class="category-title">🎬 视频生成高效算法</h3>
+      <div class="paper-grid">
+
+        <a class="paper-card" href="papers/unipool-shared-expert-pool-moe.html">
+          <div class="card-tag">视频生成 · MoE · 全局 Expert Pool</div>
+          <h4>UniPool: A Globally Shared Expert Pool for Mixture-of-Experts</h4>
+          <p class="card-tldr">全局共享 Expert Pool 替换逐层独立 experts，41.6% 参数预算即可持平标准 MoE，视频 DiT 中 expert 参数亚线性增长</p>
+          <div class="card-meta">Minbin Huang, Han Shi et al. · 2026-05</div>
+        </a>
+
+        <a class="paper-card" href="papers/cola-dlm-continuous-latent-diffusion-lm.html">
+          <div class="card-tag">视频生成 · 连续扩散 · 非自回归</div>
+          <h4>Cola DLM: Continuous Latent Diffusion Language Model</h4>
+          <p class="card-tldr">层级隐空间扩散：Text VAE → block-causal DiT → 条件解码，隐先验传输替代 token 级恢复，~2B 参数 scaling 行为与 AR 媲美，天然扩展至视频模态</p>
+          <div class="card-meta">Hongcan Guo, Shen Nie et al. · 2026-05</div>
+        </a>
+
+        <a class="paper-card" href="papers/svg2-sparse-videogen-2.html">
+          <div class="card-tag">视频生成 · 稀疏注意力 · Video DiT</div>
+          <h4>SVG-2: Sparse VideoGen 2 — Training-Free Sparse Attention</h4>
+          <p class="card-tldr">Head-specific 稀疏分类 + 去噪步动态调度，CogVideoX-5B 加速 2.8x，VBench 损失 &lt;0.2%，无训练即插即用</p>
+          <div class="card-meta">Haocheng Xi, Yilong Zhao et al. · 2026-05</div>
+        </a>
+
+        <a class="paper-card" href="papers/flowedit-v-efficient-video-editing.html">
+          <div class="card-tag">视频生成 · 视频编辑 · 整流流</div>
+          <h4>FlowEdit-V: Efficient Video Editing via Rectified Flow Inversion</h4>
+          <p class="card-tldr">单步流偏移替代 DDIM 逐步反演链，帧间滑动窗口保时序一致性，3.4x 加速，时序一致性评分提升 8.2%</p>
+          <div class="card-meta">FlowEdit Team · 2026-05</div>
+        </a>
+
+      </div>
+    </section>
+
+    <section class="date-section">
+      <div class="date-header">
         <h2>🗓️ 2026-04-30</h2>
         <span class="badge badge-theme">LLM 效率 · 视频生成效率</span>
       </div>

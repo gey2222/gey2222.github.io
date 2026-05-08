@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpecKV: Adaptive Speculative Decoding with Compression-Aware Gamma Selection | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">SpecKV: Adaptive Speculative Decoding with Compression-Aware Gamma Selection</h1>
+      <p class="subtitle">Shikhar Shukla et al. · 2026-05</p>
+    </div>
+  </header>
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">推测解码 · 自适应 Gamma</span>
+      <span class="badge badge-theme">KV 压缩 · LLM 加速</span>
+      <a href="https://arxiv.org/abs/2605.02888" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2605.02888 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>SpecKV 为推测解码引入了压缩感知的自适应推测长度（γ）控制器。草稿模型的置信度与熵信号与接受率高度相关（约 0.56），轻量 MLP 控制器据此动态选择每步最优 γ，跨 4 类任务 × 3 种 KV 压缩级别均有效。vs 固定 γ=4 提升 56.0%，额外开销仅 0.34ms，代码开源。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>固定 γ 的局限</strong>：推测解码中固定推测长度 γ 无法适应不同任务难度，简单任务下 γ 可以更长，复杂任务下长 γ 会导致大量验证失败</li>
+        <li><strong>KV 压缩对接受率的影响</strong>：量化 KV Cache（INT8/NF4）会降低验证模型精度，进而影响接受率，固定 γ 在高压缩下表现更差</li>
+        <li><strong>任务异质性</strong>：代码生成、数学推理、对话、文档摘要等不同任务对 γ 的最优选择差异显著</li>
+        <li><strong>动态适应需求</strong>：同一生成序列中，不同位置的接受率也会随上下文变化，需要逐步动态调整</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>1. 压缩 × 任务 Profiling：</strong></p>
+      <div class="formula-block">
+        <code>
+// 离线 Profiling 矩阵
+Profile[task_type][γ][compression_level] → acceptance_rate
+
+// 4 类任务 × 4 种 γ (1,2,4,8) × 3 压缩级别 (FP16,INT8,NF4)
+// = 48 个配置的接受率统计
+        </code>
+      </div>
+      <p><strong>2. 草稿信号 → 接受率预测：</strong>发现草稿模型的 top-1 置信度和分布熵与验证接受率强相关（r≈0.56），用这两个轻量信号作为在线预测特征。</p>
+      <div class="formula-block">
+        <code>
+// MLP 控制器（极小参数量）
+γ* = MLP([confidence, entropy, task_type, compression_level])
+
+// 输入：草稿置信度、预测熵、任务类型嵌入、当前压缩级别
+// 输出：最优推测长度 γ ∈ {1, 2, 4, 8}
+// 开销：仅 0.34ms/step
+        </code>
+      </div>
+      <p><strong>3. 在线自适应推测：</strong>每个解码步骤调用 MLP 控制器获取当前最优 γ，无需重新 profile，实现逐步动态适应。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>vs 固定 γ=4</strong>：整体加速提升 56.0%</li>
+        <li><strong>控制器开销</strong>：每步仅 0.34ms，相对于推测解码本身可忽略不计</li>
+        <li><strong>置信度-接受率相关性</strong>：Pearson r ≈ 0.56，验证了信号有效性</li>
+        <li><strong>NF4 压缩场景</strong>：自适应 γ 显著优于固定 γ，压缩导致的接受率下降被有效补偿</li>
+        <li><strong>跨任务泛化</strong>：4 类任务（代码/数学/对话/摘要）均一致受益</li>
+        <li><strong>开源</strong>：代码公开，可直接集成到现有推测解码框架</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首次将 KV 压缩级别纳入推测解码的 γ 选择决策，解决压缩与推测的联合优化问题</li>
+        <li>发现草稿置信度/熵是接受率的有效预测信号，为自适应控制提供轻量特征</li>
+        <li>轻量 MLP 控制器仅 0.34ms 开销实现逐步动态 γ 选择</li>
+        <li>系统性 profiling 框架（任务×长度×压缩）为后续研究提供基准数据集</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>离线 profiling 阶段需要对 48 种配置进行统计，初始设置成本较高</li>
+        <li>任务类型分类（4 类）较粗糙，细粒度任务可能需要更精细的分类</li>
+        <li>置信度-接受率相关性约 0.56，仍有约 44% 的方差未被解释</li>
+        <li>目前针对草稿模型和验证模型固定配对，不同草稿模型需重新 profile</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

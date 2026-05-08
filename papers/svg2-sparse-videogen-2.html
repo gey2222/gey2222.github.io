@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SVG-2: Sparse VideoGen 2 — Training-Free Sparse Attention for Video DiT | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">SVG-2: Sparse VideoGen 2 — Training-Free Sparse Attention for Video Diffusion Transformers</h1>
+      <p class="subtitle">Haocheng Xi, Yilong Zhao et al. (UC Berkeley / MIT) · 2026-05</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-theme">视频生成 · 稀疏注意力 · 无训练加速</span>
+      <span class="badge badge-theme">Video DiT · CogVideoX · HunyuanVideo</span>
+      <a href="https://arxiv.org/abs/2605.05955" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2605.05955 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>SVG-2 是 Sparse VideoGen 的升级版，针对视频扩散 Transformer（Video DiT）的 3D Full Attention 提出 head-specific 稀疏模式检测与动态稀疏调度。在 CogVideoX-5B 上实现 2.8x 端到端加速，VBench 分数下降 &lt;0.2%，完全无需重训练，即插即用于任意 Video DiT 架构。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>视频生成的注意力瓶颈</strong>：Video DiT 对全时空序列做 3D Full Attention，计算量随分辨率和帧数平方增长；生成 720p 视频时注意力占推理总时间 60–70%</li>
+        <li><strong>SVG-1 的局限</strong>：原始 SVG 将注意力 head 统一分为"full"和"streaming"两类，忽略了不同 head 的稀疏模式差异；在高分辨率或长视频下误差累积</li>
+        <li><strong>稀疏模式的 Head 异质性</strong>：实验分析发现视频 DiT 中不同 attention head 具有显著不同的稀疏结构：部分 head 高度时空局部化，另一些 head 需要全局感受野；统一策略导致质量下降或加速不足</li>
+        <li><strong>跨去噪步的冗余</strong>：视频去噪后期（t 小），相邻 step 的注意力 pattern 高度相似，可大幅提高稀疏率</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>1. Head-Specific 稀疏模式检测：</strong></p>
+      <div class="formula-block">
+        <code>
+          对每个 attention head h 在校准序列上分析注意力分布：<br>
+          &nbsp;&nbsp;- 计算每行注意力的 spatial locality score L(h)<br>
+          &nbsp;&nbsp;- L(h) 高 → "local head"：使用滑动窗口稀疏注意力<br>
+          &nbsp;&nbsp;- L(h) 低 → "global head"：保留 full attention 或 streaming 模式<br>
+          &nbsp;&nbsp;- 中等 → 自适应选择基于内容的 top-k sparse<br>
+          <br>
+          分配策略（以 CogVideoX 为例）：<br>
+          &nbsp;&nbsp;- ~45% heads → local sparse (3D sliding window)<br>
+          &nbsp;&nbsp;- ~30% heads → streaming + sink tokens<br>
+          &nbsp;&nbsp;- ~25% heads → full attention（语义关键头）
+        </code>
+      </div>
+      <p><strong>2. 去噪步动态稀疏调度：</strong></p>
+      <div class="formula-block">
+        <code>
+          基于去噪进度动态调整各 head 的稀疏率：<br>
+          &nbsp;&nbsp;早期去噪（t 大，高噪声）：降低稀疏率，保留更多注意力容量<br>
+          &nbsp;&nbsp;后期去噪（t 小，低噪声）：提升稀疏率至最大，步间 pattern 高度稳定<br>
+          <br>
+          稀疏率调度：ρ(t) = ρ_min + (ρ_max - ρ_min) · (1 - t/T)<br>
+          平均稀疏率 ~75%，计算量降低约 64%
+        </code>
+      </div>
+      <p><strong>3. FlashAttention-3 集成：</strong>稀疏注意力以块稀疏格式调用 FlashAttention-3 kernel，充分利用 A100/H100 的 Tensor Core，将理论 FLOPs 节省转化为实际加速。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>CogVideoX-5B 端到端加速</strong>：2.8x（720p, 49帧），生成延迟从 ~180s → ~65s</li>
+        <li><strong>质量保持</strong>：VBench 综合分数下降 &lt;0.2%，视觉质量、运动流畅性、时序一致性均保持</li>
+        <li><strong>HunyuanVideo</strong>：1.9x 加速，质量损失同样在感知阈值以下</li>
+        <li><strong>消融：Head 分类的必要性</strong>：相比 SVG-1 统一策略，head-specific 方案在相同稀疏率下 VBench 高 1.8 分</li>
+        <li><strong>动态调度的贡献</strong>：相比静态稀疏率，动态调度额外提升 0.35x 加速，质量无变化</li>
+        <li><strong>部署</strong>：pip 可安装，与 diffusers 库无缝集成</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>揭示视频 DiT 中 attention head 具有显著异质稀疏性，提出 head-specific 分类框架</li>
+        <li>引入去噪步动态稀疏调度，将稀疏率与信号噪声比挂钩，实现加速与质量的最优权衡</li>
+        <li>在 CogVideoX-5B 实现 2.8x 无损加速，刷新视频 DiT 无训练加速 SOTA</li>
+        <li>提供即插即用实现，对现有视频生成工作流零侵入</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>需要少量校准样本（~50 clips）来确定各 head 的稀疏分类，新模型需重新校准</li>
+        <li>在极低分辨率（256p）场景下加速效果不明显，注意力本不是瓶颈</li>
+        <li>跨平台适配：目前仅优化了 NVIDIA GPU（A100/H100），对其他硬件（AMD, Apple Silicon）的适配待完善</li>
+        <li>对需要长程全局时序关系的任务（如长视频生成 >200 帧），全局 head 比例需提升，限制最终加速比</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

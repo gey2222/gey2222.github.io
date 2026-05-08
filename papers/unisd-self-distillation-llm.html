@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UniSD: Unified Self-Distillation Framework for LLMs | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">UniSD: Unified Self-Distillation Framework for LLMs</h1>
+      <p class="subtitle">Yiqiao Jin et al. · 2026-05</p>
+    </div>
+  </header>
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">自蒸馏 · 知识蒸馏</span>
+      <span class="badge badge-theme">LLM 适配 · 无外部教师</span>
+      <a href="https://arxiv.org/abs/2605.06597" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2605.06597 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>UniSD 是首个统一多种自蒸馏信号的 LLM 适配框架，无需任何外部教师模型。整合多教师一致性约束、EMA 教师稳定化、token 级对比学习、特征匹配和散度裁剪五大组件。跨 6 个 benchmark、6 个模型（3 个模型家族）验证，UniSD-full 比基础模型提升 +5.4 分，比最强单一基线提升 +2.8 分。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>外部教师模型依赖</strong>：传统知识蒸馏需要更大的教师模型，但大型教师模型计算成本高且不易获取</li>
+        <li><strong>自蒸馏方法碎片化</strong>：现有自蒸馏方法（EMA 自蒸馏、对比学习等）各自独立设计，在不同场景下表现不稳定</li>
+        <li><strong>训练稳定性问题</strong>：自蒸馏中教师与学生使用同一网络，容易导致训练崩溃或知识退化</li>
+        <li><strong>多粒度蒸馏需求</strong>：token 级别和特征级别的知识对齐需要不同的损失函数，单一方法难以兼顾</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>1. EMA 教师稳定化：</strong></p>
+      <div class="formula-block">
+        <code>
+// 指数移动平均维护稳定教师
+θ_teacher ← m · θ_teacher + (1-m) · θ_student
+
+// EMA 教师提供稳定的软标签，避免训练崩溃
+soft_labels = Softmax(logits_teacher / T)
+        </code>
+      </div>
+      <p><strong>2. 多教师一致性约束：</strong>在训练过程中维护多个不同时间步的 EMA 快照作为多个教师，通过一致性损失约束学生输出与多教师预测的平均一致。</p>
+      <p><strong>3. Token 级对比学习：</strong></p>
+      <div class="formula-block">
+        <code>
+// 正样本：同一 token 在不同 dropout 视图下的表示
+// 负样本：批次内其他 token 表示
+L_contrast = -log(sim(z_i, z_i+) / ∑_j sim(z_i, z_j))
+        </code>
+      </div>
+      <p><strong>4. 特征匹配 + 散度裁剪：</strong>中间层特征对齐损失确保深层知识传递；散度裁剪（clip 大梯度）防止极端样本破坏优化稳定性。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>vs 基础模型（UniSD-full）</strong>：跨 6 个 benchmark 平均提升 +5.4 分</li>
+        <li><strong>vs 最强单一基线</strong>：提升 +2.8 分，证明统一框架的协同增益</li>
+        <li><strong>跨模型家族泛化</strong>：在 3 个不同模型家族（6 个模型）上均取得一致提升</li>
+        <li><strong>消融实验</strong>：5 个组件各自均有贡献，完整组合效果最优</li>
+        <li><strong>训练稳定性</strong>：散度裁剪 + EMA 教师组合消除了训练过程中的性能崩溃现象</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>首个统一多种自蒸馏信号的完整框架，无需外部教师模型</li>
+        <li>系统分析了 EMA 稳定化、对比学习、特征匹配、散度裁剪的协同机制</li>
+        <li>跨 3 个模型家族 6 个模型的广泛验证，证明方法的通用性</li>
+        <li>为 LLM 的无外部依赖高效适配提供了完整的工程方案</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>5 个组件同时激活带来额外的超参数调整负担（温度 T、动量 m、裁剪阈值等）</li>
+        <li>多教师维护增加了训练时内存占用（多个 EMA 快照）</li>
+        <li>在极小模型（&lt;1B 参数）上自蒸馏的收益尚待验证</li>
+        <li>对比学习需要较大的批次大小才能提供足够的负样本多样性</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

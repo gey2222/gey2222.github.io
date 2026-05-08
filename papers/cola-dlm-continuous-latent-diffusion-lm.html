@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cola DLM: Continuous Latent Diffusion Language Model | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">Cola DLM: Continuous Latent Diffusion Language Model</h1>
+      <p class="subtitle">Hongcan Guo, Qinyu Zhao, Yian Zhao, Shen Nie, Rui Zhu et al. · 2026-05</p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">LLM · 连续扩散 · 非自回归</span>
+      <span class="badge badge-theme">层级隐空间 · DiT · 视频生成通用架构</span>
+      <a href="https://arxiv.org/abs/2605.06548" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2605.06548 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>Cola DLM 提出层级连续隐空间扩散语言模型：Text VAE 编码文本到隐向量，block-causal DiT 在连续隐空间建模全局语义先验，最后条件解码回文本。扩散过程执行隐先验传输而非 token 级别恢复，实现非自回归生成，且架构天然可推广至视频等连续模态。在 ~2B 参数规模、~2000 EFLOPs 验证了强 scaling 行为。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>自回归范式的约束</strong>：LLM 强制从左到右生成，无法全局规划，推理延迟受序列长度线性制约</li>
+        <li><strong>现有非自回归方案的不足</strong>：masked diffusion（LLaDA）等方法在 token 空间扩散，难以建模全局连续语义；生成效率和质量仍落后于 AR 模型</li>
+        <li><strong>连续空间建模的潜力</strong>：图像/视频生成中，连续隐空间 + DiT 架构已证明扩展性极强（DALL-E 3、Sora），但语言模型尚未有统一的层级隐扩散框架</li>
+        <li><strong>模态统一的需求</strong>：文本与视频统一在连续隐空间可消除模态鸿沟，为多模态生成奠定基础</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>1. 三阶段层级架构：</strong></p>
+      <div class="formula-block">
+        <code>
+          阶段 1：Text VAE（文本 → 隐向量）<br>
+          &nbsp;&nbsp;输入 token 序列 x → 编码器 → 连续隐向量 z ∈ ℝ^{L×d}<br>
+          &nbsp;&nbsp;VAE 损失：L_vae = L_recon + β·KL(q(z|x) || p(z))<br>
+          <br>
+          阶段 2：Block-Causal DiT（隐先验建模）<br>
+          &nbsp;&nbsp;在连续隐空间学习全局语义先验 p(z)<br>
+          &nbsp;&nbsp;Block-causal masking 保证生成条件性同时允许并行计算<br>
+          &nbsp;&nbsp;扩散过程：z_t = √α_t · z₀ + √(1-α_t) · ε  （隐先验传输）<br>
+          <br>
+          阶段 3：条件解码（隐向量 → 文本）<br>
+          &nbsp;&nbsp;给定生成的 z，条件解码器恢复 token 序列<br>
+          &nbsp;&nbsp;全局语义已在 z 中固化，解码只负责局部实现
+        </code>
+      </div>
+      <p><strong>2. 隐先验传输 vs Token 级恢复：</strong>扩散噪声施加在连续隐空间而非离散 token，避免离散化梯度问题，支持更平滑的优化路径。全局语义组织与局部文本实现解耦。</p>
+      <p><strong>3. 统一多模态扩展：</strong>相同架构中 z 可替换为图像/视频 patch 嵌入，天然支持连续模态（如视频帧序列）的生成建模，无需结构改动。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>对比基线</strong>：~2B 参数规模 AR（LLaMA 架构）和 LLaDA（masked diffusion），严格参数匹配</li>
+        <li><strong>Benchmark 覆盖</strong>：8 个文本生成/推理/理解 benchmark 全面评测</li>
+        <li><strong>Scaling 行为</strong>：训练计算量从 ~100 到 ~2000 EFLOPs，Cola DLM 展示出与 AR 模型相当的 scaling 曲线</li>
+        <li><strong>生成质量</strong>：相比 LLaDA 在多数 benchmark 上超越，接近 AR 基线性能</li>
+        <li><strong>连续模态扩展</strong>：初步验证了相同架构在图像描述生成任务上的适用性</li>
+        <li><strong>项目页面</strong>：https://hongcanguo.github.io/Cola-DLM/（99 页论文，31 图，9 表）</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>提出层级连续隐扩散语言模型框架 Cola DLM，首次将文本生成系统地解耦为隐先验建模与条件解码两阶段</li>
+        <li>引入"隐先验传输"概念，区别于现有扩散 LM 的 token 级观测恢复，更适配连续优化</li>
+        <li>验证 Cola DLM 在 ~2B 规模具有与 AR 模型相当的 scaling 行为，为非自回归路线提供竞争力证据</li>
+        <li>架构天然统一离散文本与连续模态（图像、视频），为多模态统一生成提供新范式</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>三阶段训练流程复杂，Text VAE 的质量直接影响上游隐先验建模，训练稳定性需要细致调优</li>
+        <li>在大规模（>7B）模型的 scaling 行为尚未充分验证</li>
+        <li>推理速度：虽然非自回归，但扩散采样步数仍为主要延迟来源，与 AR 的逐 token 解码孰快需具体场景对比</li>
+        <li>视频生成的实际扩展需额外的时序建模设计，论文以文本为主，视频仅概念验证</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

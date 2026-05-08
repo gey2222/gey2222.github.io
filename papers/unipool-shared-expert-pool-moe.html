@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UniPool: Globally Shared Expert Pool for MoE | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">UniPool: Globally Shared Expert Pool for MoE</h1>
+      <p class="subtitle">Minbin Huang, Han Shi, Chuanyang Zheng et al. (CUHK) · 2026-05</p>
+    </div>
+  </header>
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">MoE · 全局专家池</span>
+      <span class="badge badge-theme">视频 DiT · 参数效率</span>
+      <a href="https://arxiv.org/abs/2605.06665" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2605.06665 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>UniPool 用单一全局共享专家池替代 MoE 中按层分配的专家，各层通过独立 Router 访问同一池子。在 5 个规模（182M–978M）上验证损失最高降低 0.0386；精简池变体仅用 41.6%–66.7% 参数预算即可匹配乃至超越逐层 MoE，特别适合视频生成 DiT 架构中的 MoE 层。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>逐层专家浪费</strong>：传统 MoE 每层独立拥有专家集，导致不同层的语义相似专家重复存在，参数利用率低</li>
+        <li><strong>跨层知识孤岛</strong>：专家绑定到特定层，无法在层间共享知识，限制了参数的复用效率</li>
+        <li><strong>视频 DiT 的特殊需求</strong>：视频生成 DiT 的 MoE 层需要处理时空一致性特征，跨层专家共享可能带来更好的全局表示</li>
+        <li><strong>路由不均衡</strong>：逐层路由容易出现专家负载不均，全局共享池可提供更大路由空间</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>1. 全局共享专家池架构：</strong></p>
+      <div class="formula-block">
+        <code>
+// 传统逐层 MoE
+Layer_l: Router_l → Expert_{l,1..K}  // 每层独立专家
+
+// UniPool：全局共享池
+Global_Pool: E_1, E_2, ..., E_N  // 单一共享专家池
+
+// 各层通过独立 Router 访问全局池
+Layer_l: Router_l → top-k from {E_1..E_N}
+
+// 总专家数 N << L × K（L 层 × K 专家/层）
+        </code>
+      </div>
+      <p><strong>2. NormRouter：</strong>对各层 Router 的 logit 进行层归一化，消除不同层 Router 之间的尺度差异，确保全局路由的公平竞争。</p>
+      <p><strong>3. 池级辅助损失：</strong></p>
+      <div class="formula-block">
+        <code>
+// 全局池负载均衡损失（跨所有层统计）
+L_aux = α · CV(load_per_expert_across_all_layers)²
+
+// 保证全局池中所有专家被均匀利用
+// 而非某些专家被所有层集中选择
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>验证损失降低（5 个规模）</strong>：最高降低 0.0386 vs 逐层 MoE</li>
+        <li><strong>精简池（41.6% 参数预算）</strong>：匹配逐层 MoE 性能，参数节省 58.4%</li>
+        <li><strong>精简池（66.7% 参数预算）</strong>：超越逐层 MoE 基线</li>
+        <li><strong>规模覆盖</strong>：182M、~300M、~500M、~700M、978M 五个规模全部验证有效</li>
+        <li><strong>视频生成 DiT 适用性</strong>：在视频生成架构上验证了方法的域适应性</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>提出全局共享专家池概念，打破 MoE 的逐层专家绑定限制</li>
+        <li>NormRouter 解决多层共享路由时的尺度不一致问题</li>
+        <li>池级辅助损失确保全局专家利用率均衡</li>
+        <li>精简池变体在参数效率上取得显著突破，为视频 DiT 的 MoE 设计提供新范式</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>全局共享池在训练时需要协调所有层的 Router 更新，分布式训练中的通信开销需评估</li>
+        <li>跨层路由决策的可解释性降低，难以分析特定层的专家偏好</li>
+        <li>在极深网络（如 100+ 层）中，全局池的路由竞争可能导致部分专家长期未被选择</li>
+        <li>目前主要在预训练阶段验证，微调阶段的行为尚待研究</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

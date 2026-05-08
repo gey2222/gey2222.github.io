@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POPO: Positive-Only Policy Optimization | 每日论文精读</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="../index.html" style="color:var(--text-muted);font-size:0.9rem;">← 返回首页</a>
+      <h1 style="margin-top:12px;">POPO: Positive-Only Policy Optimization with Implicit Negative Gradients</h1>
+      <p class="subtitle">Hao Fang et al. · 2026-05</p>
+    </div>
+  </header>
+  <main class="container" style="max-width:860px;">
+    <div style="margin:32px 0 20px;display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="badge badge-llm">RLVR · 策略优化</span>
+      <span class="badge badge-theme">推理增强 · 正样本学习</span>
+      <a href="https://arxiv.org/abs/2605.06650" target="_blank" class="badge" style="background:var(--bg3);color:var(--accent);">arXiv 2605.06650 ↗</a>
+    </div>
+
+    <section class="paper-detail-section">
+      <h2>TL;DR</h2>
+      <p>POPO 是一种新型 RLVR 框架，仅通过在线正样本 rollout 进行学习——通过有界重要性采样将正概率强化转化为隐式负梯度，无需额外负样本采样。用孪生策略网络替代 KL 散度约束，稳定优化。Qwen-Math-7B 在 AIME 2025 上达到 36.67%，显著超越 GRPO 的 30.00%，同时减少计算开销。</p>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>研究背景</h2>
+      <ul>
+        <li><strong>正负样本双采样开销</strong>：GRPO 等 RLVR 方法需要同时采样正样本和负样本 rollout，负样本采样带来显著计算开销</li>
+        <li><strong>KL 散度不稳定</strong>：标准 RLVR 中使用 KL 散度约束策略更新，但在推理任务上容易出现优化不稳定和梯度爆炸</li>
+        <li><strong>负梯度的必要性争议</strong>：负梯度（惩罚错误答案）是否真正不可或缺，还是可以通过正样本学习隐式获得</li>
+        <li><strong>数学推理挑战</strong>：AIME 等高难度数学竞赛题对 7B 规模模型是重大挑战，需要高效的强化学习方法</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心方法</h2>
+      <p><strong>1. 正样本重要性采样与概率再分配：</strong></p>
+      <div class="formula-block">
+        <code>
+// 仅使用正样本 rollout R⁺ = {τ | reward(τ) > 0}
+
+// 有界重要性采样权重
+w(τ) = clip(π_θ(τ) / π_ref(τ), 1-ε, 1+ε)
+
+// 概率再分配：强化正样本概率时，负样本概率隐式下降
+∑_τ π_θ(τ) = 1  →  增大 π(τ⁺) 自然减小 π(τ⁻)
+
+// 隐式负梯度通过归一化约束自然涌现
+        </code>
+      </div>
+      <p><strong>2. 孪生策略网络（Siamese Policy Network）：</strong>维护在线策略 π_θ 和动量更新的参考策略 π_ref（类似 MoCo 中的动量编码器），用有界相似性惩罚替代 KL 散度，避免优化不稳定。</p>
+      <p><strong>3. 动量自适应参考更新：</strong></p>
+      <div class="formula-block">
+        <code>
+// EMA 动量更新参考策略
+π_ref ← m · π_ref + (1-m) · π_θ
+
+// 有界相似性惩罚（替代 KL 散度）
+L_sim = max(0, sim(π_θ, π_ref) - δ)
+        </code>
+      </div>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>实验结果</h2>
+      <ul>
+        <li><strong>AIME 2025（Qwen-Math-7B）</strong>：POPO 36.67% vs GRPO 30.00%，提升 +6.67 个百分点</li>
+        <li><strong>计算效率</strong>：避免负样本 rollout 采样，每训练步计算量减少约 40%</li>
+        <li><strong>优化稳定性</strong>：孪生网络 + 有界相似性惩罚消除了 KL 散度引发的梯度峰值</li>
+        <li><strong>样本效率</strong>：相同训练步数下收敛更快，在其他数学推理 benchmark 上同样优于 GRPO</li>
+      </ul>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>核心贡献</h2>
+      <ol>
+        <li>证明纯正样本学习可以通过概率再分配隐式产生负梯度，颠覆了 RLVR 必须使用负样本的既有认知</li>
+        <li>提出有界重要性采样机制，保证正样本强化的稳定性</li>
+        <li>孪生策略网络 + 动量自适应方案替代 KL 散度，提供更稳定的约束</li>
+        <li>在 AIME 2025 高难度数学推理任务上取得显著 SOTA 提升</li>
+      </ol>
+    </section>
+
+    <section class="paper-detail-section">
+      <h2>局限性</h2>
+      <ul>
+        <li>正样本稀缺问题：对于极难任务（正确率接近 0%），在线正样本可能极少，训练信号不足</li>
+        <li>动量超参数 m 的敏感性：参考策略更新速度需要仔细调节</li>
+        <li>目前主要在数学推理任务验证，在代码生成、指令跟随等其他 RLVR 场景的效果待验证</li>
+        <li>隐式负梯度的理论保证在非凸优化景观下尚需进一步分析</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
